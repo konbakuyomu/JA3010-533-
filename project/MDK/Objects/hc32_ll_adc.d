@@ -1,0 +1,17 @@
+.\objects\hc32_ll_adc.o: ..\..\drivers\hc32_ll_driver\src\hc32_ll_adc.c
+.\objects\hc32_ll_adc.o: ..\..\drivers\hc32_ll_driver\inc\hc32_ll_adc.h
+.\objects\hc32_ll_adc.o: ..\..\drivers\hc32_ll_driver\inc\hc32_ll_def.h
+.\objects\hc32_ll_adc.o: D:\keil_v5\ARM\ARMCC\Bin\..\include\stddef.h
+.\objects\hc32_ll_adc.o: D:\keil_v5\ARM\ARMCC\Bin\..\include\stdint.h
+.\objects\hc32_ll_adc.o: ..\..\drivers\cmsis\Device\HDSC\hc32f4xx\Include\hc32f4xx.h
+.\objects\hc32_ll_adc.o: ..\..\drivers\cmsis\Device\HDSC\hc32f4xx\Include\hc32f460.h
+.\objects\hc32_ll_adc.o: ..\..\drivers\cmsis\Include\core_cm4.h
+.\objects\hc32_ll_adc.o: ..\..\drivers\cmsis\Include\cmsis_version.h
+.\objects\hc32_ll_adc.o: ..\..\drivers\cmsis\Include\cmsis_compiler.h
+.\objects\hc32_ll_adc.o: ..\..\drivers\cmsis\Include\cmsis_armcc.h
+.\objects\hc32_ll_adc.o: ..\..\drivers\cmsis\Include\mpu_armv7.h
+.\objects\hc32_ll_adc.o: ..\..\drivers\cmsis\Device\HDSC\hc32f4xx\Include\system_hc32f460.h
+.\objects\hc32_ll_adc.o: ..\..\drivers\cmsis\Device\HDSC\hc32f4xx\Include\hc32f4xx.h
+.\objects\hc32_ll_adc.o: ..\..\source\hc32f4xx_conf.h
+.\objects\hc32_ll_adc.o: ..\..\drivers\hc32_ll_driver\inc\hc32_ll_utility.h
+.\objects\hc32_ll_adc.o: D:\keil_v5\ARM\ARMCC\Bin\..\include\stdio.h

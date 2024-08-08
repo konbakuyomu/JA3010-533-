@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<section name="Workbench">
+	<section name="ImportExportAction">
+		<item key="ImportExportPage.STORE_SELECTED_IMPORT_WIZARD_ID" value="org.eclipse.ui.wizards.import.FileSystem"/>
+		<list key="ImportExportPage.STORE_EXPANDED_IMPORT_CATEGORIES">
+			<item value="org.eclipse.ui.Basic"/>
+		</list>
+	</section>
+	<section name="FileSystemImportWizard">
+		<item key="WizardFileSystemResourceImportPage1.STORE_OVERWRITE_EXISTING_RESOURCES_ID" value="false"/>
+		<item key="WizardFileSystemResourceImportPage1.STORE_CREATE_CONTAINER_STRUCTURE_ID" value="false"/>
+		<item key="WizardFileSystemResourceImportPage1.STORE_CREATE_VIRTUAL_FOLDERS_ID" value="true"/>
+		<item key="WizardFileSystemResourceImportPage1.STORE_CREATE_LINKS_IN_WORKSPACE_ID" value="true"/>
+		<item key="WizardFileSystemResourceImportPage1.STORE_PATH_VARIABLE_SELECTED_ID" value="true"/>
+		<item key="WizardFileSystemResourceImportPage1.STORE_PATH_VARIABLE_NAME_ID" value="PROJECT_LOC"/>
+		<list key="WizardFileSystemResourceImportPage1.STORE_SOURCE_NAMES_ID">
+			<item value="D:\USR\460-3.1test"/>
+			<item value="D:\USR\460-3.1test\drivers"/>
+			<item value="D:\USR\460-3.1test\HardWare"/>
+			<item value="D:\USR\460-3.1test\HardWare\485"/>
+			<item value="D:\USR\460-3.1test\drivers\cmsis\Device\HDSC\hc32f4xx"/>
+			<item value="D:\USR\460-3.1test\drivers\bsp"/>
+			<item value="D:\USR\460-3.1test\source"/>
+			<item value="G:\CSY  的文件 ALL\代码管理\460\460-3.0test\driver\src"/>
+			<item value="C:\Users\mayn\Desktop\460-3.0test\cmsis\Include"/>
+			<item value="C:\Users\mayn\Desktop\460-3.0test\cmsis\Device\HDSC\hc32f4xx"/>
+			<item value="C:\Users\mayn\Desktop\460-3.0test\driver"/>
+			<item value="C:\Users\mayn\Desktop\460-3.0test\source"/>
+			<item value="C:\Users\mayn\Desktop\460-3.0test"/>
+			<item value="C:\Users\mayn\Desktop\460-3.0test\cmsis"/>
+			<item value="G:\CSY  的文件 ALL\代码管理\HC32F4A0\HC32F4A0--demo\project\source"/>
+			<item value="G:\CSY  的文件 ALL\代码管理\HC32F4A0\HC32F4A0"/>
+		</list>
+	</section>
+</section>

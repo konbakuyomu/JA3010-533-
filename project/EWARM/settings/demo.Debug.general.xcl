@@ -1,0 +1,13 @@
+"D:\IAR 8.30\arm\bin\armproc.dll" 
+
+"D:\IAR 8.30\arm\bin\armJET.dll" 
+
+"D:\360MoveData\Users\mayn\Desktop\460-3.1test\project\EWARM\Debug\Exe\demo.out" 
+
+--plugin="D:\IAR 8.30\arm\bin\armbat.dll" 
+
+--flash_loader="D:\360MoveData\Users\mayn\Desktop\460-3.1test\project\EWARM\config\flashloader\HC32F460xE.board" 
+
+
+
+

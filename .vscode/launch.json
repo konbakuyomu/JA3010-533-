@@ -1,0 +1,31 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "cwd": "${workspaceRoot}",
+            "type": "cortex-debug",
+            "request": "launch",
+            "name": "jlink",
+            "servertype": "jlink",
+            "interface": "jtag",
+            "executable": "project\\vscode\\build\\Debug\\vscode.elf",
+            "runToEntryPoint": "main",
+            "device": "HC32F46x",
+            "toolchainPrefix": "arm-none-eabi",
+            "svdFile": "drivers/cmsis/Device/HDSC/hc32f4xx/Source/GCC/svd/HC32F460.svd"
+        },
+        {
+            "cwd": "${workspaceRoot}",
+            "type": "cortex-debug",
+            "request": "launch",
+            "name": "pyocd",
+            "servertype": "pyocd",
+            "executable": "build\\Debug\\vscode.elf",
+            "runToEntryPoint": "main",
+            "targetId": "hc32f460jeta",
+            "toolchainPrefix": "arm-none-eabi",
+            "cmsisPack": "..\\..\\drivers\\HDSC.HC32F460.1.0.9.pack",
+            "svdFile": "drivers/cmsis/Device/HDSC/hc32f4xx/Source/GCC/svd/HC32F460.svd"
+        }
+    ]
+}

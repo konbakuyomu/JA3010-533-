@@ -1,0 +1,111 @@
+{
+  "name": "vscode",
+  "type": "ARM",
+  "dependenceList": [],
+  "srcDirs": [
+    "../../drivers",
+    "../../source"
+  ],
+  "virtualFolder": {
+    "name": "<virtual_root>",
+    "files": [],
+    "folders": []
+  },
+  "outDir": "build",
+  "deviceName": "HC32F460PETB",
+  "packDir": ".pack/HDSC/HC32F460.1.0.11",
+  "miscInfo": {
+    "uid": "de4ed5e2f17865c822a6faed9e40c7ba"
+  },
+  "targets": {
+    "Debug": {
+      "excludeList": [
+        "../../drivers/bsp/ev_hc32f460_lqfp100_v2/ev_hc32f460_lqfp100_v2_w25qxx.c",
+        "../../drivers/bsp/ev_hc32f460_lqfp100_v2/ev_hc32f460_lqfp100_v2_wm8731.c",
+        "../../drivers/cmsis/Device/HDSC/hc32f4xx/Source/ARM",
+        "../../drivers/cmsis/Device/HDSC/hc32f4xx/Source/IAR",
+        "../../drivers/cmsis/Device/HDSC/hc32f4xx/Source/GCC/linker",
+        "../../drivers/cmsis/Device/HDSC/hc32f4xx/Source/GCC/svd",
+        "../../drivers/hc32_ll_driver/src/hc32_ll_usb.c",
+        "../../drivers/cmsis/Include",
+        "../../drivers/bsp/components/astra_ui/hal/hal_dreamCore/components/oled/graph_lib",
+        "../../drivers/bsp/components/astra_ui/hal/hal_dreamCore/memory_pool.cpp",
+        "../../drivers/freeRTOS/port/MemMang/heap_1.c",
+        "../../drivers/freeRTOS/port/MemMang/heap_2.c",
+        "../../drivers/freeRTOS/port/MemMang/heap_3.c",
+        "../../drivers/freeRTOS/port/MemMang/heap_5.c"
+      ],
+      "toolchain": "GCC",
+      "compileConfig": {
+        "cpuType": "Cortex-M4",
+        "floatingPointHardware": "single",
+        "scatterFilePath": "HC32F460xE.ld",
+        "useCustomScatterFile": true,
+        "storageLayout": {
+          "RAM": [],
+          "ROM": []
+        },
+        "options": "null"
+      },
+      "uploader": "JLink",
+      "uploadConfig": {
+        "bin": "",
+        "baseAddr": "",
+        "cpuInfo": {
+          "vendor": "HDSC",
+          "cpuName": "HC32F46x"
+        },
+        "proType": 0,
+        "speed": 10000,
+        "otherCmds": ""
+      },
+      "uploadConfigMap": {
+        "JLink": {
+          "bin": "",
+          "baseAddr": "",
+          "cpuInfo": {
+            "vendor": "null",
+            "cpuName": "null"
+          },
+          "proType": 1,
+          "speed": 8000,
+          "otherCmds": ""
+        },
+        "pyOCD": {
+          "bin": "",
+          "targetName": "hc32f460jeta",
+          "baseAddr": "0x08000000",
+          "speed": "4M",
+          "config": ".eide/debug.pyocd.yaml"
+        }
+      },
+      "custom_dep": {
+        "name": "default",
+        "incList": [
+          ".",
+          "../../drivers/hc32_ll_driver/inc",
+          "../../drivers/bsp/ev_hc32f460_lqfp100_v2",
+          "../../source",
+          "../../drivers/cmsis/Include",
+          "../../drivers/cmsis/Device/HDSC/hc32f4xx/Include",
+          "../../drivers/bsp/variable",
+          "../../drivers/bsp/components/u8g2_csrc",
+          "../../drivers/bsp/components/astra_ui/astra",
+          "../../drivers/bsp/spi",
+          "../../drivers/bsp/components/astra_ui/hal/hal_dreamCore",
+          "../../drivers/bsp/components/button",
+          "../../drivers/freeRTOS/include",
+          "../../drivers/freeRTOS/port/GCC/ARM_CM4F",
+          "../../drivers/bsp/gif"
+        ],
+        "libList": [],
+        "defineList": [
+          "__DEBUG",
+          "HC32F460",
+          "USE_DDL_DRIVER"
+        ]
+      }
+    }
+  },
+  "version": "3.4"
+}
