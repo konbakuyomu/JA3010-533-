@@ -251,7 +251,11 @@ static void BTNTask(void *pvParameters)
 
       case btn_event_all:
       {
+        // main分支修改
 
+
+        // home分支修改
+        // home分支修改
         break;
       }
       }
