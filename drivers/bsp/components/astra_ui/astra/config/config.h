@@ -27,7 +27,7 @@ namespace astra
     float fadeAnimationSpeed = 100;            // 淡入淡出动画速度
     float cameraAnimationSpeed = 90;           // 相机动画速度
     float logoAnimationSpeed = 85;             // Logo动画速度
-    float numberEditorCharAnimationSpeed = 92; // 数字选择框字符动画速度
+    float numberEditorCharAnimationSpeed = 95; // 数字选择框字符动画速度
 
     // 展开设置
     bool tileUnfold = true; // 磁贴是否展开
@@ -97,7 +97,7 @@ namespace astra
     float checkBoxRadius = 1;       // 复选框圆角半径
 
     // 数字编辑页面设置
-    float numberEditorCharMargin = 4;                  // 字符之间的间隔像素数
+    float numberEditorCharMargin = 7;                  // 字符之间的间隔像素数
     float numberEditorCharMoveLengthwithoutDot = 12.5; // 字符之间选中框每次移动的长度(中间没有小数点)
     float numberEditorCharMoveLengthwithDot = 20;      // 字符之间选中框每次移动的长度(中间有小数点)
   };

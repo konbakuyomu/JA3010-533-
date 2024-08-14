@@ -228,6 +228,21 @@ namespace astra
     this->positionForeground = {};
   }
 
+  List::List(const std::string &_title, const std::vector<unsigned char> &_pic, ItemAction _action)
+  {
+    this->title = _title;
+    this->pic = _pic;
+    this->action = _action;
+
+    this->selectIndex = 0;
+
+    this->childMenu.clear();
+    this->childWidget.clear();
+
+    this->position = {};
+    this->positionForeground = {};
+  }
+
   void List::render(const std::vector<float> &_camera)
   {
     // 更新配置信息

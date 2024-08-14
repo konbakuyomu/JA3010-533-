@@ -60,20 +60,20 @@ std::vector<uint8_t> pic_3 = {
     0xFF, 0xFF, 0xFF, 0x3F, 0xFF, 0xFF, 0xFF, 0x3F};
 
 std::vector<std::string> labels = {"前方", "后方", "左方", "测试"};
-std::vector<std::string> labels_1 = {"上方", "下方", "后方"};
-std::vector<std::string> labels_2 = {"测试", "测试", "测试"};
+std::vector<std::string> labels_1 = {"前方", "下方", "后方"};
+std::vector<std::string> labels_2 = {"前方", "测试", "测试"};
 
 auto *astraLauncher = new astra::Launcher();
-auto *rootPage = new yomu::GammaDashboard("测试界面0", pic_2, labels);
-auto *secondPage = new yomu::GammaDashboard("测试界面1", pic_2, labels_1);
-auto *thirdPage = new yomu::GammaDashboard("测试界面2", pic_2, labels_2);
-auto *TilePage = new astra::Tile("磁贴", pic_test);
-auto *ListPage = new astra::List("列表", pic_test);
+auto *rootPage = new yomu::GammaDashboard(labels);
+auto *secondPage = new yomu::GammaDashboard(labels_1);
+auto *thirdPage = new yomu::GammaDashboard(labels_2);
+auto *fourthPage = new yomu::PDXDashboard(labels);
+auto *treeRootPage = new astra::Tile("树形根目录");
+auto *thresholdSettingsPage = new astra::List("设置阈值", pic_test, astra::List::ItemAction::EnterSubpage);
+auto *clearCumulativeDosePage = new astra::List("清空累计剂量", pic_3, astra::List::ItemAction::ShowPopup);
 
 void astraCoreInit(void)
 {
-  bool test = false;
-
   HAL::inject(new HALDreamCore);
   HAL::delay(150);
   // astra::drawSTART(50);
@@ -82,20 +82,28 @@ void astraCoreInit(void)
   // 添加环形界面
   rootPage->addMenu(secondPage);
   secondPage->addMenu(thirdPage);
-  thirdPage->addMenu(rootPage);
+  thirdPage->addMenu(fourthPage);
+  fourthPage->addMenu(rootPage);
 
   // 环形界面与树形界面的链接(这里的添加顺序反过来是因为addItem有添加父界面指针的操作)
-  thirdPage->addItem(TilePage);
-  secondPage->addItem(TilePage);
-  rootPage->addItem(TilePage);
+  fourthPage->addItem(treeRootPage);
+  thirdPage->addItem(treeRootPage);
+  secondPage->addItem(treeRootPage);
+  rootPage->addItem(treeRootPage);
 
   // 添加树形界面
-  TilePage->addItem(new astra::List("返回", pic_1));
-  TilePage->addItem(new astra::List("测试2", pic_2));
-  TilePage->addItem(ListPage);
-  ListPage->addItem(new astra::Divider("测试1"));
-  ListPage->addItem(new astra::List("-测试2"), new astra::CheckBox(test));
-  ListPage->addItem(new astra::List("-测试3"), new astra::CheckBox(test));
+  treeRootPage->addItem(thresholdSettingsPage);
+  treeRootPage->addItem(clearCumulativeDosePage);
+  // 树形界面：阈值设置
+  thresholdSettingsPage->addItem(new yomu::NumberEditor("探头1", "10000", "μSv/h"));
+  thresholdSettingsPage->addItem(new yomu::NumberEditor("探头2", "20000", "μSv/h"));
+  thresholdSettingsPage->addItem(new yomu::NumberEditor("探头3", "30000", "μSv/h"));
+  thresholdSettingsPage->addItem(new yomu::NumberEditor("探头4", "40000", "μSv/h"));
+  // 树形界面：清空累计剂量
+  clearCumulativeDosePage->addItem(new astra::Divider("探头1"));
+  clearCumulativeDosePage->addItem(new astra::Divider("探头2"));
+  clearCumulativeDosePage->addItem(new astra::Divider("探头3"));
+  clearCumulativeDosePage->addItem(new astra::Divider("探头4"));
 
   astraLauncher->init(rootPage);
 }

@@ -10,14 +10,16 @@ namespace yomu
     {
     public:
         explicit NumberEditor(std::string initialNumber);
+        NumberEditor(const std::string &_title, std::string initialNumber);
         NumberEditor(const std::string &_title, const std::vector<unsigned char> &_pic, std::string initialNumber);
+        NumberEditor(const std::string &_title, std::string initialNumber, const std::string &unit);
 
     public:
         void init() override;
         void render(const std::vector<float> &_camera) override;
 
     public:
-        void onLeft() override; 
+        void onLeft() override;
         void onRight() override;
         void onUp() override;
         bool onConfirm(int _index) override;
@@ -27,6 +29,7 @@ namespace yomu
         std::string cancel_button = "取消";
         std::string confirm_button = "确认";
         std::string Number = "1000";
+        std::string unit = "";
         int currentIndex = 0;    // 当前的选中框索引
         int countNumber = 2;     // 当设置界面需要设置的字符数量（默认是加上了取消和确认键）
         int dotIndex = -1;       // 当前小数点的索引，默认为-1，即没有小数点
@@ -34,6 +37,11 @@ namespace yomu
         std::vector<int> digits; // 用于存储每一位数字
 
     public:
+        float xUnit = 0;    // 单位x坐标
+        float yUnit = 0;    // 单位y坐标
+        float xUnitTrg = 0; // 单位目标x坐标
+        float yUnitTrg = 0; // 单位目标y坐标
+
         float xTitle = 0;    // 标题x坐标
         float yTitle = 0;    // 标题y坐标
         float xTitleTrg = 0; // 标题目标x坐标
@@ -71,7 +79,7 @@ namespace yomu
     {
     public:
         GammaDashboard() = default;
-        GammaDashboard(const std::string &_title, const std::vector<unsigned char> &_pic, const std::vector<std::string> &labels);
+        GammaDashboard(const std::vector<std::string> &labels);
 
     public:
         void init(astra::Menu::ExitDirection _direction) override;
@@ -99,6 +107,48 @@ namespace yomu
         float labelWidth = 0;                         // 保存最长的标签宽度
         float valueWidth = 0;                         // 数值显示的宽度
         float unitWidth = 0;                          // 单位显示的宽度
+        float totalWidth = 0;                         // 总宽度
+        std::vector<RowCoordinates> m_rowCoordinates; // 每一行的 实时x坐标 和 预期x坐标
+
+    private:
+        std::vector<std::string> m_labels;
+        size_t m_displayLines;
+    };
+
+    class PDXDashboard : public astra::Page
+    {
+    public:
+        [[nodiscard]] std::string getType() const override { return "PDXDashboard"; }
+
+    public:
+        PDXDashboard() = default;
+        PDXDashboard(const std::vector<std::string> &labels);
+
+    public:
+        void init(astra::Menu::ExitDirection _direction) override;
+        ExitDirection render(bool is_Clear_Canvas) override;
+
+    public:
+        void onRight() override;
+        void onLeft() override;
+        ExitDirection shouldExit() const override;
+
+    public:
+        bool updateWarningStatus(const std::string &label, bool p, bool d);
+
+    public:
+        struct RowCoordinates
+        {
+            float xRow;
+            float xRowTrg;
+            bool p;
+            bool d;
+        };
+
+    public:
+        float lineHeight = 0;                         // 每一行的行高
+        float labelWidth = 0;                         // 保存最长的标签宽度
+        float charWidth = 0;                          // P、D、X 字符的宽度
         float totalWidth = 0;                         // 总宽度
         std::vector<RowCoordinates> m_rowCoordinates; // 每一行的 实时x坐标 和 预期x坐标
 

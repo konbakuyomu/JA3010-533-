@@ -7,7 +7,7 @@ TaskHandle_t AppTaskCreate_Handle = NULL;
 TaskHandle_t AstraTask_Handle = NULL;
 TaskHandle_t LEDTask_Handle = NULL;
 TaskHandle_t BTNTask_Handle = NULL;
-
+TaskHandle_t vMemoryDefragTask_Handle = NULL; // 内存碎片整理任务句柄
 /* 创建软件定时器句柄 */
 // TimerHandle_t btn_tic_taskHandle;
 
@@ -110,9 +110,9 @@ void TMR0_Config(void)
 
     /*  timer0 配置 */
     (void)TMR0_StructInit(&stcTmr0Init);
-    stcTmr0Init.u32ClockSrc     = TMR0_CLK_SRC_XTAL32;
-    stcTmr0Init.u32ClockDiv     = TMR0_CLK_DIV;
-    stcTmr0Init.u32Func         = TMR0_FUNC_CMP;
+    stcTmr0Init.u32ClockSrc = TMR0_CLK_SRC_XTAL32;
+    stcTmr0Init.u32ClockDiv = TMR0_CLK_DIV;
+    stcTmr0Init.u32Func = TMR0_FUNC_CMP;
     stcTmr0Init.u16CompareValue = (uint16_t)TMR0_CMP_VALUE;
     (void)TMR0_Init(TMR0_UNIT, TMR0_CH, &stcTmr0Init);
 
@@ -121,8 +121,8 @@ void TMR0_Config(void)
     TMR0_IntCmd(TMR0_UNIT, TMR0_CH_INT, ENABLE);
 
     /* 中断配置 */
-    stcIrqSignConfig.enIntSrc    = TMR0_INT_SRC;
-    stcIrqSignConfig.enIRQn      = TMR0_IRQn;
+    stcIrqSignConfig.enIntSrc = TMR0_INT_SRC;
+    stcIrqSignConfig.enIRQn = TMR0_IRQn;
     stcIrqSignConfig.pfnCallback = &TMR0_CompareIrqCallback;
     (void)INTC_IrqSignIn(&stcIrqSignConfig);
     NVIC_ClearPendingIRQ(stcIrqSignConfig.enIRQn);

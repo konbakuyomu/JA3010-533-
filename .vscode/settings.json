@@ -71,6 +71,8 @@
         "sstream": "cpp",
         "charconv": "cpp",
         "iostream": "cpp",
-        "hgo1286440.h": "c"
+        "hgo1286440.h": "c",
+        "string.h": "c",
+        "malloc.h": "c"
     }
 }

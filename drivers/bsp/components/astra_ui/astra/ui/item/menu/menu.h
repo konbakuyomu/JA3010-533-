@@ -31,7 +31,7 @@ namespace astra
     std::vector<float> cameraPosMemory = {};
     void rememberCameraPos(const std::vector<float> &_camera)
     {
-      
+
       cameraPosMemory = _camera;
       cameraPosMemoryFlag = true;
     }
@@ -62,6 +62,19 @@ namespace astra
     [[nodiscard]] Position getItemPosition(unsigned char _index) const;
     virtual void childPosInit(const std::vector<float> &_camera) {}
     virtual void forePosInit() {}
+    virtual int getSelectedIndex() const { return -1; }
+    virtual Menu *findTileAncestor()
+    {
+      if (this->getType() == "Tile")
+      {
+        return this;
+      }
+      if (this->parent == nullptr)
+      {
+        return nullptr;
+      }
+      return this->parent->findTileAncestor();
+    }
 
   public:
     std::string title;
@@ -136,8 +149,17 @@ namespace astra
     PositionForeground positionForeground{};
 
   public:
+    enum class ItemAction
+    {
+      ShowPopup,
+      EnterSubpage
+    };
+    ItemAction action = ItemAction::EnterSubpage;
+
+  public:
     void childPosInit(const std::vector<float> &_camera) override;
     void forePosInit() override;
+    int getSelectedIndex() const override { return selectIndex; }
 
     List();
     // 如果不使用 explicit，编译器可能会在某些情况下进行隐式转换，这可能导致意外的行为
@@ -146,6 +168,7 @@ namespace astra
     explicit List(const std::vector<unsigned char> &_pic);
     // 双参数构造函数不需要 explicit，因为它有多个参数，不会发生隐式转换
     List(const std::string &_title, const std::vector<unsigned char> &_pic);
+    List(const std::string &_title, const std::vector<unsigned char> &_pic, ItemAction _action);
 
   public:
     // 第一个值 0 表示当前可见列表的起始项索引

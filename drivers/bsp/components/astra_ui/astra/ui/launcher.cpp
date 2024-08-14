@@ -100,7 +100,7 @@ namespace astra
    * @brief 显示一个带有确认和取消选项的弹出信息
    * @param _info 要显示的信息
    */
-  void Launcher::popInfo(std::string _info)
+  bool Launcher::popInfo(std::string _info)
   {
     // 静态变量,用于控制初始化和渲染状态
     static bool init = false;
@@ -259,6 +259,17 @@ namespace astra
         init = false;
       }
     }
+
+    if (press_num == 1)
+    {
+      // 确认键
+      return true;
+    }
+    else
+    {
+      // 取消键
+      return false;
+    }
   }
 
   /**
@@ -305,7 +316,7 @@ namespace astra
   {
     if (currentMenu->getNextMenu() == nullptr)
     {
-      popInfo("未引用页面!");
+      popInfo("父页面为空!");
       return false;
     }
 
@@ -324,7 +335,7 @@ namespace astra
   {
     if (currentMenu->getNextMenu() == nullptr)
     {
-      popInfo("未引用页面!");
+      popInfo("子页面为空!");
       return false;
     }
 
@@ -341,18 +352,17 @@ namespace astra
    */
   bool Launcher::open()
   {
-
     // 如果当前页面指向的当前item没有后继 那就返回false
-    if (currentMenu->getNextMenu() == nullptr)
+    if (currentMenu->childMenu.empty())
     {
       // 如果是自定义 page 类需要使用这种退出方式
       if ((currentMenu->getType() == "Page"))
       {
-        popInfo("未引用页面!");
+        popInfo("子页面为空!");
       }
       else
       {
-        popInfo("未引用页面!", 300);
+        popInfo("子页面为空!", 300);
       }
       return false;
     }
@@ -372,9 +382,9 @@ namespace astra
     }
     else
     {
-      if (currentMenu->getNextMenu()->getItemNum() <= 0)
+      if (currentMenu->getNextMenu()->childMenu.empty())
       {
-        popInfo("空 页 面!", 300);
+        popInfo("子页面下无子页面!", 300);
         return false;
       }
 
@@ -402,17 +412,12 @@ namespace astra
       if ((currentMenu->getType() == "Page"))
       {
         // 如果是自定义 page 类需要使用这种退出方式
-        popInfo("未引用页面!");
+        popInfo("父页面为空!");
       }
       else
       {
-        popInfo("未引用页面!", 600);
+        popInfo("父页面为空!", 600);
       }
-      return false;
-    }
-    if (currentMenu->getPreview()->getItemNum() == 0)
-    {
-      popInfo("空 页 面!", 600);
       return false;
     }
 
@@ -448,6 +453,30 @@ namespace astra
     return true;
   }
 
+  bool Launcher::returnToTile()
+  {
+    Menu *tileMenu = currentMenu->findTileAncestor();
+    if (tileMenu == nullptr)
+    {
+      popInfo("未找到磁贴页面!", 300);
+      return false;
+    }
+
+    while (currentMenu != tileMenu)
+    {
+      currentMenu->rememberCameraPos(camera->getPositionTrg());
+      currentMenu->deInit();
+      currentMenu = currentMenu->getPreview();
+    }
+
+    // 重新初始化磁贴页面
+    currentMenu->forePosInit();
+    currentMenu->childPosInit(camera->getPosition());
+    selector->inject(currentMenu);
+
+    return true;
+  }
+
   void Launcher::update()
   {
     uint8_t btn_io_num = 0;
@@ -459,16 +488,32 @@ namespace astra
     // 环形界面的更新模式
     if (uiType == UIType::Circular)
     {
-      if ((currentMenu->getType() == "Page"))
+      astra::Menu::ExitDirection exit = astra::Menu::ExitDirection::None;
+      if (dynamic_cast<Page *>(currentMenu) != nullptr)
       {
-        // 如果是自定义 page 类，这里不需要render内部再清空canvas
-        astra::Menu::ExitDirection exit = dynamic_cast<Page *>(currentMenu)->render(false);
+        // 通用page类的render函数
+        exit = dynamic_cast<Page *>(currentMenu)->render(false);
 
-        if (exit == astra::Menu::ExitDirection::Left)
-          previous();
-        else if (exit == astra::Menu::ExitDirection::Right)
-          next();
+        // 如果是在 GammaDashboard 界面
+        if (dynamic_cast<yomu::GammaDashboard *>(currentMenu) != nullptr)
+        {
+          static int count = 0;
+          static int value = 10000;
+          if (count == 100)
+          {
+            count = 0;
+            dynamic_cast<yomu::GammaDashboard *>(currentMenu)->updateRowData("前方", std::to_string(value));
+            value++;
+          }
+          count++;
+        }
+        // exit = dynamic_cast<yomu::PDXDashboard *>(currentMenu)->render(false);
       }
+
+      if (exit == astra::Menu::ExitDirection::Left)
+        previous();
+      else if (exit == astra::Menu::ExitDirection::Right)
+        next();
     }
     // 树形界面的更新模式
     else if (uiType == UIType::Tree)
@@ -511,7 +556,8 @@ namespace astra
       {
         if (uiType == UIType::Circular)
         {
-          if ((currentMenu->getType() == "Page"))
+          // 如果是page类或者是page类的子类
+          if (dynamic_cast<Page *>(currentMenu) != nullptr)
           {
             dynamic_cast<Page *>(currentMenu)->onLeft();
           }
@@ -520,7 +566,7 @@ namespace astra
         {
           if ((currentMenu->getType() == "Page"))
           {
-            dynamic_cast<Page *>(currentMenu)->onLeft();
+            dynamic_cast<Page *>(currentMenu)->onUp();
           }
           else
             selector->goPreview();
@@ -530,7 +576,8 @@ namespace astra
       {
         if (uiType == UIType::Circular)
         {
-          if ((currentMenu->getType() == "Page"))
+          // 如果是page类或者是page类的子类
+          if (dynamic_cast<Page *>(currentMenu) != nullptr)
           {
             dynamic_cast<Page *>(currentMenu)->onRight();
           }
@@ -635,8 +682,31 @@ namespace astra
             bool is_exit = dynamic_cast<Page *>(currentMenu)->onConfirm(1);
             if (is_exit)
             {
-              open();
+              if (popInfo("是否设置?"))
+              {
+                // 按下确认设置，等待popinfo动画完成后直接跳回磁贴页面
+                returnToTile();
+              }
             }
+          }
+          else if (currentMenu->getType() == "List")
+          {
+            // 如果当前菜单的action是ShowPopup，那么就弹出提示菜单
+            if (dynamic_cast<List *>(currentMenu)->action == List::ItemAction::ShowPopup)
+            {
+              int selectedIndex = currentMenu->getSelectedIndex();
+              if (selectedIndex != -1)
+              {
+                // 弹出提示菜单
+                if (popInfo("是否清空?"))
+                {
+                  // 按下确认设置，等待popinfo动画完成后直接跳回磁贴页面
+                  returnToTile();
+                }
+              }
+            }
+            else
+              open();
           }
           else
             open();

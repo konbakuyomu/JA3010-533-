@@ -32,7 +32,6 @@ static void AppTaskCreate(void *pvParameters);
 static void AstraTask(void *pvParameters);
 static void LEDTask(void *pvParameters);
 static void BTNTask(void *pvParameters);
-void btn_tic_task(TimerHandle_t xTimer);
 
 /**
  * @brief  初始化板级外设
@@ -139,7 +138,7 @@ static void AppTaskCreate(void *pvParameters)
   /* 创建任务创建任务 */
   xReturn = xTaskCreate((TaskFunction_t)AstraTask,          /* 任务入口函数 */
                         (const char *)"Astra_ui_Task",      /* 任务名字 */
-                        (uint16_t)512,                      /* 任务栈大小 */
+                        (uint16_t)1024,                     /* 任务栈大小 */
                         (void *)NULL,                       /* 任务入口函数参数 */
                         (UBaseType_t)3,                     /* 任务的优先级 */
                         (TaskHandle_t *)&AstraTask_Handle); /* 任务控制块指针 */
@@ -148,33 +147,17 @@ static void AppTaskCreate(void *pvParameters)
   }
 
   /* 创建LED任务 */
-  xReturn = xTaskCreate((TaskFunction_t)LEDTask,          /* 任务入口函数 */
-                        (const char *)"LED_Task",         /* 任务名字 */
-                        (uint16_t)128,                    /* 任务栈大小 */
-                        (void *)NULL,                     /* 任务入口函数参数 */
-                        (UBaseType_t)3,                   /* 任务的优先级 */
-                        (TaskHandle_t *)&LEDTask_Handle); /* 任务控制块指针 */
+  xReturn = xTaskCreate((TaskFunction_t)LEDTask,            /* 任务入口函数 */
+                        (const char *)"LED_Task",           /* 任务名字 */
+                        (uint16_t)configMINIMAL_STACK_SIZE, /* 任务栈大小 */
+                        (void *)NULL,                       /* 任务入口函数参数 */
+                        (UBaseType_t)3,                     /* 任务的优先级 */
+                        (TaskHandle_t *)&LEDTask_Handle);   /* 任务控制块指针 */
   if (xReturn != pdPASS)
   {
-    
   }
   //-------------------------创建软件定时器----------------------------------
-  // 参数说明：
-  // - 定时器周期（以系统时钟节拍为单位）
-  // - pdTRUE 表示周期性定时器，pdFALSE 表示一次性定时器
-  // - 定时器ID（用于识别定时器，这里设为0）
-  // - 回调函数
-  // btn_tic_taskHandle = xTimerCreate((const char *)"btn_tic_task",           /* 定时器名字 */
-  //                                   pdMS_TO_TICKS(3),                       /* 定时器周期 */
-  //                                   (UBaseType_t)pdTRUE,                    /* 是否自动重载 */
-  //                                   (void *)0,                              /* 定时器ID */
-  //                                   (TimerCallbackFunction_t)btn_tic_task); /* 定时器回调函数 */
-  // if (btn_tic_taskHandle != NULL)
-  // {
-  //   // 启动定时器
-  //   // 0 表示不阻塞等待
-  //   xTimerStart(btn_tic_taskHandle, 0);
-  // }
+
   //-------------------------创建事件标志组----------------------------------
   xInit_EventGroup = xEventGroupCreate();
   //-------------------------结束创建----------------------------------
