@@ -4,7 +4,9 @@
             "name": "Win32",
             "includePath": [
                 "${workspaceFolder}/**",
+                "${workspaceFolder}\\drivers\\drv\\can",
                 "${workspaceFolder}\\drivers\\bsp\\spi",
+                "${workspaceFolder}\\drivers\\bsp\\can",
                 "${workspaceFolder}\\drivers\\bsp\\variable",
                 "${workspaceFolder}\\drivers\\bsp\\components\\astra_ui\\hal\\hal_dreamCore",
                 "${workspaceFolder}\\drivers\\bsp\\components\\astra_ui\\astra",

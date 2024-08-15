@@ -532,18 +532,6 @@ namespace astra
       }
     }
 
-    //  if (time == 500) selector->go(3);  //test
-    //  if (time == 800) open();  //test
-    //  if (time == 1200) selector->go(0);  //test
-    //  if (time == 1500) selector->go(1z);  //test
-    //  if (time == 1800) selector->go(6);  //test
-    //  if (time == 2100) selector->go(1);  //test
-    //  if (time == 2300) selector->go(0);  //test
-    //  if (time == 2500) open();  //test
-    //  if (time == 2900) close();
-    //  if (time == 3200) selector->go(0);  //test
-    //  if (time >= 3250) time = 0;  //test
-
     // 检查按键并直接处理
     std::pair<uint8_t, btn_event_t> keyResult = HAL::keyScan();
     btn_io_num = keyResult.first;

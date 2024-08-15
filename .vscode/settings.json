@@ -73,6 +73,7 @@
         "iostream": "cpp",
         "hgo1286440.h": "c",
         "string.h": "c",
-        "malloc.h": "c"
+        "malloc.h": "c",
+        "stdbool.h": "c"
     }
 }

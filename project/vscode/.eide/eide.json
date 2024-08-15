@@ -96,7 +96,9 @@
           "../../drivers/bsp/components/button",
           "../../drivers/freeRTOS/include",
           "../../drivers/freeRTOS/port/GCC/ARM_CM4F",
-          "../../drivers/bsp/gif"
+          "../../drivers/bsp/gif",
+          "../../drivers/bsp/can",
+          "../../drivers/drv/can"
         ],
         "libList": [],
         "defineList": [

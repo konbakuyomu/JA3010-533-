@@ -181,10 +181,8 @@ namespace astra
     };
 
     static bool onRender = true;
-    static int animationState = 0; // 0: 初始下降, 1: 左侧滑出, 2: 右侧滑入
-    static uint8_t count = 0;
+    static int animationState = 0; // 0: 初始下降, 1: 左侧滑出, 2: 右侧滑入, 3: 探头状态显示
     static EventBits_t uxBits = 0;
-    static EventBits_t waitBits = WAIT_STORAGE_CHECK | WAIT_CLOCK_CHECK | WAIT_PROBE_CHECK | WAIT_PROBE_HV_CHECK | WAIT_PROBE_STORAGE_CHECK | WAIT_GJ6401_CHECK | WAIT_J405_CHECK;
 
     // 定义要显示的文本
     static std::string text = "车载式辐射仪";
@@ -197,112 +195,180 @@ namespace astra
     static float ySubTextTrg = HAL::getSystemConfig().screenHeight - getUIConfig().logoTextHeight;
 
     // 初始化文本x坐标
-    // 计算文本的x坐标（居中显示）
     HAL::setFont(getUIConfig().logoTitleFont);
     static float xTitle = (HAL::getSystemConfig().screenWeight - HAL::getFontWidth(text)) / 2;
     HAL::setFont(getUIConfig().logoCopyRightFont);
     static float xSubText = (HAL::getSystemConfig().screenWeight - HAL::getFontWidth(subText)) / 2;
-    static float xTitleTrg, xSubTextTrg;
+    static float xTitleTrg = xTitle, xSubTextTrg = xSubText;
 
     // 初始化背景位置（屏幕外）
     static float xBackGround = 0;
     static float yBackGround = 0 - HAL::getSystemConfig().screenHeight - 1;
     static float yBackGroundTrg = 0;
 
+    // 探头状态显示
+    static std::vector<std::string> probeLabels = {"前方探头", "后方探头", "左方探头", "右方探头"};
+    static std::vector<std::string> probeStatus(4);
+    static std::vector<float> probeX(4, HAL::getSystemConfig().screenWeight + 1);
+    static std::vector<float> probeXTrg(4);
+    static float probeY[4];
+
     while (onRender)
     {
-      if (animationState == 0) // 初始下降动画
+      // 初始下降动画
+      if (animationState == 0)
       {
-        // 初始动画完成，这里的条件的意思是已经走到位
+        // 等待动画结束，进行探头通信检测(5s),然后主标题和副标题准备从左侧滑出
         if (yBackGround == yBackGroundTrg && yTitle == yTitleTrg && ySubText == ySubTextTrg)
         {
-          // 等待电池检测标志位(5s)，这里要么超时，要么收到对应的事件标志位
-          uxBits = xEventGroupWaitBits(xInit_EventGroup, WAIT_BATTERY_CHECK, pdTRUE, pdTRUE, pdMS_TO_TICKS(5000));
+          uxBits = xEventGroupWaitBits(xInit_EventGroup, ALL_CONNECT_CHECK, pdTRUE, pdTRUE, pdMS_TO_TICKS(5000));
 
-          // 进行一次左边滑出
+          HAL::setFont(getUIConfig().logoTitleFont);
+          xTitleTrg = 0 - HAL::getFontWidth(text) - 1;
+          HAL::setFont(getUIConfig().logoCopyRightFont);
           xSubTextTrg = 0 - HAL::getFontWidth(subText) - 1;
           animationState = 1;
         }
       }
-      // 等待左边滑出动作完成
-      else if (animationState == 1 && xSubText == xSubTextTrg)
+      // 主标题和副标题左边滑出后，准备显示探头状态
+      else if (animationState == 1 && xTitle == xTitleTrg && xSubText == xSubTextTrg)
       {
-        // 这里为什么要先看count是因为要兼顾到第一次检测
-        switch (count)
+        // 准备显示探头连接状态
+        for (int i = 0; i < 4; ++i)
         {
-        case 0:
-          /* 打印电池检测情况 */
-          if (uxBits & WAIT_BATTERY_CHECK)
-          {
-            subText = "探头通讯正常";
-          }
-          else
-          {
-            subText = "探头通讯异常";
-          }
-          break;
-        case 1:
-          /* 电池信息打印结束，开始存储检测，并同时开始接收事件标志位，等待2s */
-          subText = "正在高压自检...";
-          break;
-        case 2:
-          /* 打印存储检测情况 */
-          if (uxBits & WAIT_STORAGE_CHECK)
-          {
-            subText = "探头高压正常";
-          }
-          else
-          {
-            subText = "探头高压异常";
-          }
-          break;
-        case 3:
-          /* 存储信息打印结束，开始时钟检测，并同时开始接收事件标志位，等待2s */
-          subText = "正在进行预热...";
-          break;
-
-        default:
-          break;
+          uint32_t checkBit = (1 << i);
+          probeStatus[i] = probeLabels[i] + ": " + ((uxBits & checkBit) ? "连接正常" : "连接异常");
+          probeX[i] = HAL::getSystemConfig().screenWeight + 1;
+          probeXTrg[i] = 5; // 左边距
+          probeY[i] = (i + 0.8) * (HAL::getSystemConfig().screenHeight / 4);
         }
-
-        // 文本完全退出左侧，准备重新从右侧进入,在前面的switch中已经初始化好了文本
         animationState = 2;
-        xSubText = HAL::getSystemConfig().screenWeight + 1;
-        xSubTextTrg = (HAL::getSystemConfig().screenWeight - HAL::getFontWidth(subText)) / 2;
       }
-      // 文本已经从右侧进入，准备退出
-      else if (animationState == 2 && xSubText == xSubTextTrg)
+      // 探头状态从右边滑入后，给一个显示的等待时间(3s)，然后探头状态准备从左边滑出
+      else if (animationState == 2)
       {
-        /* 根据上面的switch奇数的时候都是开始查询的时候，所以在这里也就是正在查询的字样显示完毕后再开始检测事件标志组 */
-        if (count % 2 != 0)
+        bool allReached = true;
+        for (int i = 0; i < 4; ++i)
         {
-          if (count == 3)
+          if (probeX[i] != probeXTrg[i])
           {
-            // 到了这里是预热阶段
-            HAL::delay(10000);
-            // 预热结束，准备退出
-            onRender = false;
-          }
-          else
-          {
-            // 等待检查的事件标志位
-            uxBits = xEventGroupWaitBits(xInit_EventGroup, waitBits, pdTRUE, pdFALSE, pdMS_TO_TICKS(5000));
+            allReached = false;
+            break;
           }
         }
-        else
+        if (allReached)
         {
-          /* 等待2s准备退出文本 */
-          HAL::delay(2000);
+          HAL::delay(3000); // 显示3秒
+          for (int i = 0; i < 4; ++i)
+          {
+            probeXTrg[i] = 0 - HAL::getFontWidth(probeStatus[i]) - 1;
+          }
+          animationState = 3;
         }
+      }
+      // 探头状态从左边滑出后，更改副标题为高压自检提示，然后主标题和副标题准备从右侧滑入
+      else if (animationState == 3)
+      {
+        bool allExited = true;
+        for (int i = 0; i < 4; ++i)
+        {
+          if (probeX[i] != probeXTrg[i])
+          {
+            allExited = false;
+            break;
+          }
+        }
+        if (allExited)
+        {
+          subText = "正在高压自检...";
 
-        // 自检流程推进
-        count++;
+          HAL::setFont(getUIConfig().logoTitleFont);
+          xTitle = HAL::getSystemConfig().screenWeight + 1;
+          xTitleTrg = (HAL::getSystemConfig().screenWeight - HAL::getFontWidth(text)) / 2;
+          HAL::setFont(getUIConfig().logoCopyRightFont);
+          xSubText = HAL::getSystemConfig().screenWeight + 1;
+          xSubTextTrg = (HAL::getSystemConfig().screenWeight - HAL::getFontWidth(subText)) / 2;
+          animationState = 4;
+        }
+      }
+      // 主标题和副标题从右边滑入后，等待探头高压自检完成，然后主标题和副标题准备从左边滑出
+      else if (animationState == 4 && xTitle == xTitleTrg && xSubText == xSubTextTrg)
+      {
+        // 等待高压检查完成或超时
+        uxBits = xEventGroupWaitBits(xInit_EventGroup, ALL_HV_CHECK, pdTRUE, pdTRUE, pdMS_TO_TICKS(5000));
 
-        // xTitleTrg = 0 - HAL::getFontWidth(text) - (HAL::getSystemConfig().screenWeight / 1.5);
+        HAL::setFont(getUIConfig().logoTitleFont);
+        xTitleTrg = 0 - HAL::getFontWidth(text) - 1;
+        HAL::setFont(getUIConfig().logoCopyRightFont);
         xSubTextTrg = 0 - HAL::getFontWidth(subText) - 1;
-
-        // 开始退出动画
-        animationState = 1;
+        animationState = 5;
+      }
+      // 主标题和副标题从左边滑出后，等待高压自检结果显示完成，然后主标题和副标题准备从右边滑入
+      else if (animationState == 5 && xTitle == xTitleTrg && xSubText == xSubTextTrg)
+      {
+        // 准备显示探头高压自检结果
+        for (int i = 0; i < 4; ++i)
+        {
+          uint32_t checkBit = (1 << (i + 4)); // HV状态标志位从第4位开始
+          probeStatus[i] = probeLabels[i] + ": " + ((uxBits & checkBit) ? "高压正常" : "高压异常");
+          probeX[i] = HAL::getSystemConfig().screenWeight + 1;
+          probeXTrg[i] = 5; // 左边距
+          probeY[i] = (i + 0.8) * (HAL::getSystemConfig().screenHeight / 4);
+        }
+        animationState = 6;
+      }
+      // 探头高压自检结果从右边滑入后，给一个显示的等待时间(3s)，然后探头高压自检结果准备从左边滑出
+      else if (animationState == 6)
+      {
+        bool allReached = true;
+        for (int i = 0; i < 4; ++i)
+        {
+          if (probeX[i] != probeXTrg[i])
+          {
+            allReached = false;
+            break;
+          }
+        }
+        if (allReached)
+        {
+          HAL::delay(3000); // 显示3秒
+          for (int i = 0; i < 4; ++i)
+          {
+            probeXTrg[i] = 0 - HAL::getFontWidth(probeStatus[i]) - 1;
+          }
+          animationState = 7;
+        }
+      }
+      // 探头高压自检结果从左边滑出后，更改副标题为正在进行预热，然后主标题和副标题准备从右边滑入
+      else if (animationState == 7)
+      {
+        bool allExited = true;
+        for (int i = 0; i < 4; ++i)
+        {
+          if (probeX[i] != probeXTrg[i])
+          {
+            allExited = false;
+            break;
+          }
+        }
+        if (allExited)
+        {
+          subText = "正在进行预热...";
+          HAL::setFont(getUIConfig().logoTitleFont);
+          xTitle = HAL::getSystemConfig().screenWeight + 1;
+          xTitleTrg = (HAL::getSystemConfig().screenWeight - HAL::getFontWidth(text)) / 2;
+          HAL::setFont(getUIConfig().logoCopyRightFont);
+          xSubText = HAL::getSystemConfig().screenWeight + 1;
+          xSubTextTrg = (HAL::getSystemConfig().screenWeight - HAL::getFontWidth(subText)) / 2;
+          animationState = 8;
+        }
+      }
+      // 主标题和副标题从右边滑入后，等待预热完成，然后退出循环
+      else if (animationState == 8 && xTitle == xTitleTrg && xSubText == xSubTextTrg)
+      {
+        // 等待预热完成或超时
+        HAL::delay(10000); // 显示10秒
+        onRender = false;
       }
 
       HAL::canvasClear();
@@ -324,6 +390,11 @@ namespace astra
       HAL::setFont(getUIConfig().logoCopyRightFont);
       HAL::drawChinese(xSubText, ySubText, subText);
 
+      for (int i = 0; i < 4; ++i)
+      {
+        HAL::drawChinese(probeX[i], probeY[i], probeStatus[i]);
+      }
+
       // 更新位置
       if (animationState == 0)
       {
@@ -333,21 +404,18 @@ namespace astra
       }
       else
       {
-        // animation(xTitle, xTitleTrg, getUIConfig().logoAnimationSpeed);
+        animation(xTitle, xTitleTrg, getUIConfig().logoAnimationSpeed);
         animation(xSubText, xSubTextTrg, getUIConfig().logoAnimationSpeed);
+        if (animationState == 2 || animationState == 3 || animationState == 6 || animationState == 7)
+        {
+          for (int i = 0; i < 4; ++i)
+          {
+            animation(probeX[i], probeXTrg[i], getUIConfig().logoAnimationSpeed);
+          }
+        }
       }
 
       HAL::canvasUpdate();
-
-      // 检查是否需要重新开始循环
-      if (animationState == 3 && xTitle == xTitleTrg && xSubText == xSubTextTrg)
-      {
-        animationState = 1;
-      }
-
-      // // 检查是否结束渲染
-      // if (animationState == 4 && time >= _time && yBackGround == 0 - HAL::getSystemConfig().screenHeight - 1)
-      //   onRender = false;
     }
 
     // 设置字体为主要字体

@@ -76,8 +76,8 @@ void astraCoreInit(void)
 {
   HAL::inject(new HALDreamCore);
   HAL::delay(150);
-  // astra::drawSTART(50);
-  HAL::setFont(astra::getUIConfig().mainFont);
+  astra::drawSTART(50);
+  // HAL::setFont(astra::getUIConfig().mainFont);
 
   // 添加环形界面
   rootPage->addMenu(secondPage);
