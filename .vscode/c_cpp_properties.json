@@ -14,6 +14,7 @@
                 "${workspaceFolder}\\drivers\\bsp\\components\\24cxx",
                 "${workspaceFolder}\\drivers\\bsp\\components\\w25qxx",
                 "${workspaceFolder}\\drivers\\bsp\\components\\wm8731",
+                "${workspaceFolder}\\drivers\\bsp\\components\\ProbeDataManager",
                 "${workspaceFolder}\\drivers\\bsp\\ev_hc32f460_lqfp100_v2",
                 "${workspaceFolder}\\drivers\\cmsis\\Device\\HDSC\\hc32f4xx\\Include",
                 "${workspaceFolder}\\drivers\\cmsis\\Device\\HDSC\\hc32f4xx\\Source\\GCC",

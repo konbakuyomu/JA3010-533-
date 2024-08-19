@@ -27,6 +27,11 @@ extern "C"
 void CAN_IrqCallback(void);
 void CAN_ProcessReceivedData(void);
 void ProcessCANFrame(stc_can_rx_frame_t Rx_Data);
+void CAN_SendSelfCheckCommand(uint32_t u32ID);
+void CAN_SendClearCumulativeDoseCommand(uint32_t u32ID);
+void CAN_SendDoseRateAlarmThresholdCommand(uint32_t u32ID, float f32DoseRateAlarmThreshold);
+void CAN_SendUploadDoseRateAlarmThresholdCommand(uint32_t u32ID);
+void CAN_SendUploadDoseRateAndCumulativeDoseCommand(uint32_t u32ID);
 
 #ifdef __cplusplus
 }

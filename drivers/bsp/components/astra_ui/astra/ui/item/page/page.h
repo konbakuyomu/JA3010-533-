@@ -16,14 +16,18 @@ namespace yomu
 
     public:
         void init() override;
+        void init(int32_t u32ID) override;
         void render(const std::vector<float> &_camera) override;
 
     public:
         void onLeft() override;
         void onRight() override;
         void onUp() override;
-        bool onConfirm(int _index) override;
+        ConfirmResult onConfirm(int _index) override;
         float convertToFloat();
+
+    public:
+        int32_t m_u32ProbeID = 0;
 
     public:
         std::string cancel_button = "取消";
@@ -80,10 +84,18 @@ namespace yomu
     public:
         GammaDashboard() = default;
         GammaDashboard(const std::vector<std::string> &labels);
+        GammaDashboard(const std::vector<std::string> &labels, int temp);
+
+    public:
+        bool m_isAccumulatedDose; // 新增：标识是否为累计剂量界面
 
     public:
         void init(astra::Menu::ExitDirection _direction) override;
         ExitDirection render(bool is_Clear_Canvas) override;
+
+    public:
+        void registerObserver_doseRate();       // 添加剂量率界面为观察者
+        void registerObserver_cumulativeDose(); // 添加累计剂量界面为观察者
 
     public:
         void onRight() override;
@@ -127,6 +139,9 @@ namespace yomu
     public:
         void init(astra::Menu::ExitDirection _direction) override;
         ExitDirection render(bool is_Clear_Canvas) override;
+
+    public:
+        void registerObserver();
 
     public:
         void onRight() override;

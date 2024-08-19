@@ -7,12 +7,18 @@ TaskHandle_t AppTaskCreate_Handle = NULL;
 TaskHandle_t AstraTask_Handle = NULL;
 TaskHandle_t LEDTask_Handle = NULL;
 TaskHandle_t BTNTask_Handle = NULL;
-TaskHandle_t vMemoryDefragTask_Handle = NULL; // 内存碎片整理任务句柄
-/* 创建软件定时器句柄 */
-// TimerHandle_t btn_tic_taskHandle;
-
+TaskHandle_t CanTxTask_Handle = NULL;
+TaskHandle_t CanRxTask_Handle = NULL;
+/* 创建队列句柄 */
+QueueHandle_t xQueue_CanTx = NULL;         // CAN发送队列
+QueueHandle_t xQueue_WarningUpdate = NULL; // 警告更新队列
 /* 创建事件标志组句柄 */
 EventGroupHandle_t xInit_EventGroup;
+/* 创建软件定时器句柄 */
+TimerHandle_t xDoseRateTimer = NULL;
+
+/*-------------------- EEPROM --------------------*/
+ProbeData data = {0};
 
 /* 函数声明 ----------------------------------------------------------------*/
 
@@ -128,4 +134,18 @@ void TMR0_Config(void)
     NVIC_ClearPendingIRQ(stcIrqSignConfig.enIRQn);
     NVIC_SetPriority(stcIrqSignConfig.enIRQn, DDL_IRQ_PRIO_DEFAULT);
     NVIC_EnableIRQ(stcIrqSignConfig.enIRQn);
+}
+
+/**
+ * @brief  剂量率上传定时器回调函数
+ * @param  xTimer 定时器句柄
+ * @retval None
+ */
+void vDoseRateTimerCallback(TimerHandle_t xTimer)
+{
+    // 在这里添加提醒探头上传剂量率和累积剂量的代码
+    CAN_SendUploadDoseRateAndCumulativeDoseCommand(CAN_FILTER1_ID);
+    CAN_SendUploadDoseRateAndCumulativeDoseCommand(CAN_FILTER2_ID);
+    CAN_SendUploadDoseRateAndCumulativeDoseCommand(CAN_FILTER3_ID);
+    CAN_SendUploadDoseRateAndCumulativeDoseCommand(CAN_FILTER4_ID);
 }

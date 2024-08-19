@@ -53,17 +53,11 @@ extern "C"
 #define CAN_TX_SELF_CHECK               (0x41UL)    // 自检命令
 #define CAN_TX_CLEAR_CUMULATIVE_DOSE    (0x42UL)    // 累计剂量清零命令
 #define CAN_TX_SET_DOSE_RATE_ALARM      (0x43UL)    // 剂量率报警阈值设置命令
+#define CAN_TX_UPDATE_DOSE_RATE_ALARM   (0x44UL)    // 上传剂量报警阈值命令
+#define CAN_TX_UPDATE_DOSE_RATE         (0x45UL)    // 上传剂量率和累计剂量命令
 
 /* CAN发送相关定义 */
 #define CAN_TX_DLC                      (CAN_DLC8)  // CAN发送数据长度代码，设置为8字节
-#define CAN_TX_DATA_SIZE                (8U)        // CAN发送数据大小，8字节
-#define CAN_TX_DATA_SIZE_4BYTE          (4U)        // 4字节数据大小，用于特定命令
-#define CAN_TX_TIMEOUT_MS               (100U)      // CAN发送超时时间，100毫秒
-
-/* TX process */
-#define CAN_TX_PROCESS_PTB              (1U)        // 优先传输
-#define CAN_TX_PROCESS_STB              (2U)        // 同步传输
-#define CAN_TX_PROCESS_PTB_STB          (3U)        // 优先传输和同步传输
 
 /* Number of RX frame */
 #define CAN_RX_FRAME_NUM                (50U)       // 接收帧数

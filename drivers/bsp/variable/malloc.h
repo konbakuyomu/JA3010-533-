@@ -10,33 +10,33 @@ extern "C"
 #include "FreeRTOS.h"
 #include "semphr.h"
 
-#define MEM1_BLOCK_SIZE         32                              /* ÄÚ´æ¿é´óĞ¡Îª32×Ö½Ú */
-#define MEM1_MAX_SIZE           100 * 1024                      /* ×î´ó¹ÜÀíÄÚ´æ 100K£¬Áô³öÒ»Ğ©¿Õ¼ä¸ø¶ÑÕ» */
-#define MEM1_ALLOC_TABLE_SIZE   MEM1_MAX_SIZE/MEM1_BLOCK_SIZE   /* ÄÚ´æ±í´óĞ¡ */
+#define MEM1_BLOCK_SIZE         32                              /* å†…å­˜å—å¤§å°ä¸º32å­—èŠ‚ */
+#define MEM1_MAX_SIZE           100 * 1024                      /* æœ€å¤§ç®¡ç†å†…å­˜ 100Kï¼Œç•™å‡ºä¸€äº›ç©ºé—´ç»™å †æ ˆ */
+#define MEM1_ALLOC_TABLE_SIZE   MEM1_MAX_SIZE/MEM1_BLOCK_SIZE   /* å†…å­˜è¡¨å¤§å° */
 
-/* ¶¨ÒåÄÚ´æ¹ÜÀí±íÀàĞÍ */
+/* å®šä¹‰å†…å­˜ç®¡ç†è¡¨ç±»å‹ */
 #define MT_TYPE     uint16_t
 
-/* ÄÚ´æ¹ÜÀí¿ØÖÆÆ÷ */
+/* å†…å­˜ç®¡ç†æ§åˆ¶å™¨ */
 struct _m_mallco_dev
 {
-    void (*init)(void);                 /* ³õÊ¼»¯ */
-    uint8_t (*perused)(void);           /* ÄÚ´æÊ¹ÓÃÂÊ */
-    uint8_t *membase;                   /* ÄÚ´æ³Ø */
-    MT_TYPE *memmap;                    /* ÄÚ´æ¹ÜÀí×´Ì¬±í */
-    uint8_t memrdy;                     /* ÄÚ´æ¹ÜÀíÊÇ·ñ¾ÍĞ÷ */
+    void (*init)(void);                 /* åˆå§‹åŒ– */
+    uint8_t (*perused)(void);           /* å†…å­˜ä½¿ç”¨ç‡ */
+    uint8_t *membase;                   /* å†…å­˜æ±  */
+    MT_TYPE *memmap;                    /* å†…å­˜ç®¡ç†çŠ¶æ€è¡¨ */
+    uint8_t memrdy;                     /* å†…å­˜ç®¡ç†æ˜¯å¦å°±ç»ª */
 };
 
-extern struct _m_mallco_dev mallco_dev; /* ÔÚmallco.cÀïÃæ¶¨Òå */
-extern SemaphoreHandle_t xMallocMutex;  /* »¥³âĞÅºÅÁ¿£¬ÓÃÓÚ±£»¤mymallocºÍmyfreeµÄ»¥³â·ÃÎÊ */
+extern struct _m_mallco_dev mallco_dev; /* åœ¨mallco.cé‡Œé¢å®šä¹‰ */
+extern SemaphoreHandle_t xMallocMutex;  /* äº’æ–¥ä¿¡å·é‡ï¼Œç”¨äºä¿æŠ¤mymallocå’Œmyfreeçš„äº’æ–¥è®¿é—® */
 
-void my_mem_init(void);                             /* ÄÚ´æ¹ÜÀí³õÊ¼»¯º¯Êı */
-uint8_t my_mem_perused(void);                       /* »ñµÃÄÚ´æÊ¹ÓÃÂÊ */
-void my_mem_set(void *s, uint8_t c, uint32_t count);/* ÄÚ´æÉèÖÃº¯Êı */
-void my_mem_copy(void *des, void *src, uint32_t n); /* ÄÚ´æ¿½±´º¯Êı */
-void myfree(void *ptr);                             /* ÄÚ´æÊÍ·Å(Íâ²¿µ÷ÓÃ) */
-void *mymalloc(uint32_t size);                      /* ÄÚ´æ·ÖÅä(Íâ²¿µ÷ÓÃ) */
-void *myrealloc(void *ptr, uint32_t size);          /* ÖØĞÂ·ÖÅäÄÚ´æ(Íâ²¿µ÷ÓÃ) */
+void my_mem_init(void);                             /* å†…å­˜ç®¡ç†åˆå§‹åŒ–å‡½æ•° */
+uint8_t my_mem_perused(void);                       /* è·å¾—å†…å­˜ä½¿ç”¨ç‡ */
+void my_mem_set(void *s, uint8_t c, uint32_t count);/* å†…å­˜è®¾ç½®å‡½æ•° */
+void my_mem_copy(void *des, void *src, uint32_t n); /* å†…å­˜æ‹·è´å‡½æ•° */
+void myfree(void *ptr);                             /* å†…å­˜é‡Šæ”¾(å¤–éƒ¨è°ƒç”¨) */
+void *mymalloc(uint32_t size);                      /* å†…å­˜åˆ†é…(å¤–éƒ¨è°ƒç”¨) */
+void *myrealloc(void *ptr, uint32_t size);          /* é‡æ–°åˆ†é…å†…å­˜(å¤–éƒ¨è°ƒç”¨) */
 
 #ifdef __cplusplus
 }

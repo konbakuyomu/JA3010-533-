@@ -59,15 +59,12 @@ std::vector<uint8_t> pic_3 = {
     0xFF, 0x1F, 0xFE, 0x3F, 0xFF, 0x1F, 0xFE, 0x3F, 0xFF, 0xFF, 0xFF, 0x3F, 0xFF, 0xFF, 0xFF, 0x3F,
     0xFF, 0xFF, 0xFF, 0x3F, 0xFF, 0xFF, 0xFF, 0x3F};
 
-std::vector<std::string> labels = {"前方", "后方", "左方", "测试"};
-std::vector<std::string> labels_1 = {"前方", "下方", "后方"};
-std::vector<std::string> labels_2 = {"前方", "测试", "测试"};
+std::vector<std::string> labels = {"前方", "后方", "左方", "右方"};
 
 auto *astraLauncher = new astra::Launcher();
 auto *rootPage = new yomu::GammaDashboard(labels);
-auto *secondPage = new yomu::GammaDashboard(labels_1);
-auto *thirdPage = new yomu::GammaDashboard(labels_2);
-auto *fourthPage = new yomu::PDXDashboard(labels);
+auto *secondPage = new yomu::GammaDashboard(labels, 1);
+auto *thirdPage = new yomu::PDXDashboard(labels);
 auto *treeRootPage = new astra::Tile("树形根目录");
 auto *thresholdSettingsPage = new astra::List("设置阈值", pic_test, astra::List::ItemAction::EnterSubpage);
 auto *clearCumulativeDosePage = new astra::List("清空累计剂量", pic_3, astra::List::ItemAction::ShowPopup);
@@ -76,17 +73,15 @@ void astraCoreInit(void)
 {
   HAL::inject(new HALDreamCore);
   HAL::delay(150);
-  astra::drawSTART(50);
-  // HAL::setFont(astra::getUIConfig().mainFont);
+  // astra::drawSTART(50);
+  HAL::setFont(astra::getUIConfig().mainFont);
 
   // 添加环形界面
   rootPage->addMenu(secondPage);
   secondPage->addMenu(thirdPage);
-  thirdPage->addMenu(fourthPage);
-  fourthPage->addMenu(rootPage);
+  thirdPage->addMenu(rootPage);
 
   // 环形界面与树形界面的链接(这里的添加顺序反过来是因为addItem有添加父界面指针的操作)
-  fourthPage->addItem(treeRootPage);
   thirdPage->addItem(treeRootPage);
   secondPage->addItem(treeRootPage);
   rootPage->addItem(treeRootPage);

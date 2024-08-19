@@ -297,6 +297,7 @@ namespace astra
       // 如果是我自定义的 page 类，需要先初始化
       if ((currentMenu->getType() == "Page"))
       {
+        // 初始化的时候默认探头号是0
         dynamic_cast<Page *>(currentMenu)->init();
       }
 
@@ -368,12 +369,17 @@ namespace astra
     }
     if (currentMenu->getNextMenu()->getType() == "Page")
     {
+      // 获取当前选中的索引，一定要在交换指针之前获取，否则就是0
+      int32_t selectedIndex = currentMenu->getSelectedIndex();
+      uint32_t probeId = 0x40 + selectedIndex;
+
+      // 记住当前的camera坐标(page类没用到)，然后先析构（退场动画）再挪动指针
       currentMenu->rememberCameraPos(camera->getPositionTrg());
-      currentMenu->deInit(); // 先析构（退场动画）再挪动指针
+      currentMenu->deInit();
       currentMenu = currentMenu->getNextMenu();
 
-      dynamic_cast<Page *>(currentMenu)->init();
-
+      // 初始化新的page类
+      dynamic_cast<Page *>(currentMenu)->init(probeId);
       return true;
     }
     else if (currentMenu->getNextMenu()->getType() == "Divider")
@@ -493,20 +499,6 @@ namespace astra
       {
         // 通用page类的render函数
         exit = dynamic_cast<Page *>(currentMenu)->render(false);
-
-        // 如果是在 GammaDashboard 界面
-        if (dynamic_cast<yomu::GammaDashboard *>(currentMenu) != nullptr)
-        {
-          static int count = 0;
-          static int value = 10000;
-          if (count == 100)
-          {
-            count = 0;
-            dynamic_cast<yomu::GammaDashboard *>(currentMenu)->updateRowData("前方", std::to_string(value));
-            value++;
-          }
-          count++;
-        }
         // exit = dynamic_cast<yomu::PDXDashboard *>(currentMenu)->render(false);
       }
 
@@ -638,8 +630,8 @@ namespace astra
         {
           if ((currentMenu->getType() == "Page"))
           {
-            bool is_exit = dynamic_cast<Page *>(currentMenu)->onConfirm(0);
-            if (is_exit)
+            astra::Page::ConfirmResult is_exit = dynamic_cast<Page *>(currentMenu)->onConfirm(0);
+            if (is_exit.isConfirmed)
             {
               close();
             }
@@ -667,11 +659,13 @@ namespace astra
         {
           if ((currentMenu->getType() == "Page"))
           {
-            bool is_exit = dynamic_cast<Page *>(currentMenu)->onConfirm(1);
-            if (is_exit)
+            astra::Page::ConfirmResult is_exit = dynamic_cast<Page *>(currentMenu)->onConfirm(1);
+            if (is_exit.isConfirmed)
             {
               if (popInfo("是否设置?"))
               {
+                // 发送对应探头的CAN命令(修改阈值)
+                CAN_SendDoseRateAlarmThresholdCommand(is_exit.probeId, is_exit.value);
                 // 按下确认设置，等待popinfo动画完成后直接跳回磁贴页面
                 returnToTile();
               }
@@ -688,6 +682,30 @@ namespace astra
                 // 弹出提示菜单
                 if (popInfo("是否清空?"))
                 {
+                  switch (selectedIndex)
+                  {
+                  case 0:
+                    data.probe1_cumulative_dose = 0;
+                    EEPROM_WRITE(data, probe1_cumulative_dose);
+                    break;
+                  case 1:
+                    data.probe2_cumulative_dose = 0;
+                    EEPROM_WRITE(data, probe2_cumulative_dose);
+                    break;
+                  case 2:
+                    data.probe3_cumulative_dose = 0;
+                    EEPROM_WRITE(data, probe3_cumulative_dose);
+                    break;
+                  case 3:
+                    data.probe4_cumulative_dose = 0;
+                    EEPROM_WRITE(data, probe4_cumulative_dose);
+                    break;
+                  default:
+                    break;
+                  }
+                  // 发送对应探头的CAN命令(清零累计剂量)
+                  uint32_t probeId = 0x40 + selectedIndex;
+                  CAN_SendClearCumulativeDoseCommand(probeId);
                   // 按下确认设置，等待popinfo动画完成后直接跳回磁贴页面
                   returnToTile();
                 }

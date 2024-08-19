@@ -1,12 +1,12 @@
 
 #include "bsp_spi.h"
 
-/******************************±äÁ¿¶¨Òå*******************************/
+/******************************å˜é‡å®šä¹‰*******************************/
 static __IO en_flag_status_t enTxCompleteFlag = RESET;
 
-/******************************º¯Êı¶¨Òå*******************************/
+/******************************å‡½æ•°å®šä¹‰*******************************/
 /**
- * @brief  DMA ´«ÊäÍê³ÉÖĞ¶Ï
+ * @brief  DMA ä¼ è¾“å®Œæˆä¸­æ–­
  * @param  None
  * @retval None
  */
@@ -25,7 +25,7 @@ void SPI_Config(void)
     stc_irq_signin_config_t stcIrqSignConfig;
     stc_gpio_init_t stcGpioInit;
 
-    /* ÅäÖÃGPIO */
+    /* é…ç½®GPIO */
     (void)GPIO_StructInit(&stcGpioInit);
     stcGpioInit.u16PinDrv = PIN_HIGH_DRV;
     stcGpioInit.u16PinDir = PIN_DIR_OUT;
@@ -33,43 +33,43 @@ void SPI_Config(void)
     (void)GPIO_Init(SPI_MOSI_PORT, SPI_MOSI_PIN, &stcGpioInit);
     (void)GPIO_Init(SPI_SS_PORT, SPI_SS_PIN, &stcGpioInit);
 
-    /* ÅäÖÃ¶Ë¿Ú */
+    /* é…ç½®ç«¯å£ */
     GPIO_SetFunc(SPI_SCK_PORT, SPI_SCK_PIN, SPI_SCK_FUNC);
     GPIO_SetFunc(SPI_MOSI_PORT, SPI_MOSI_PIN, SPI_MOSI_FUNC);
     // GPIO_SetFunc(SPI_SS_PORT, SPI_SS_PIN, SPI_SS_FUNC);
 
-    /* ÅäÖÃ SPI */
+    /* é…ç½® SPI */
     FCG_Fcg1PeriphClockCmd(SPI_CLK, ENABLE);
     (void)SPI_StructInit(&stcSpiInit);
-    stcSpiInit.u32WireMode = SPI_3_WIRE;               // 3ÏßSPI
-    stcSpiInit.u32TransMode = SPI_SEND_ONLY;           // Ö»·¢ËÍ
-    stcSpiInit.u32MasterSlave = SPI_MASTER_SLAVE;      // Ö÷»úÄ£Ê½
-    stcSpiInit.u32Parity = SPI_PARITY_INVD;            // ½ûÓÃÆæÅ¼Ğ£Ñé
-    stcSpiInit.u32SpiMode = SPI_MD_3;                  // SSD1306Õâ¸öÆÁÄ»µÃÊ¹ÓÃMD_0Ä£Ê½
-    stcSpiInit.u32BaudRatePrescaler = SPI_BR_CLK_DIV4; // Ê±ÖÓ·ÖÆµ
-    stcSpiInit.u32DataBits = SPI_DATA_SIZE_8BIT;       // Êı¾İÎ»¿í
-    stcSpiInit.u32FirstBit = SPI_FIRST_MSB;            // ¸ßÎ»ÔÚÇ°
-    stcSpiInit.u32FrameLevel = SPI_1_FRAME;            // 1Ö¡(¾ÍÊÇÔÚSPIµÄÊı¾İ¼Ä´æÆ÷SPI_DRÖĞ±ØĞëĞ´Èë¶àÉÙÖ¡Êı¾İºó£¬ÕâĞ©Êı¾İ²Å»á±»·¢ËÍµ½´«Êä»º³åÇø)
+    stcSpiInit.u32WireMode = SPI_3_WIRE;               // 3çº¿SPI
+    stcSpiInit.u32TransMode = SPI_SEND_ONLY;           // åªå‘é€
+    stcSpiInit.u32MasterSlave = SPI_MASTER_SLAVE;      // ä¸»æœºæ¨¡å¼
+    stcSpiInit.u32Parity = SPI_PARITY_INVD;            // ç¦ç”¨å¥‡å¶æ ¡éªŒ
+    stcSpiInit.u32SpiMode = SPI_MD_3;                  // SSD1306è¿™ä¸ªå±å¹•å¾—ä½¿ç”¨MD_0æ¨¡å¼
+    stcSpiInit.u32BaudRatePrescaler = SPI_BR_CLK_DIV4; // æ—¶é’Ÿåˆ†é¢‘
+    stcSpiInit.u32DataBits = SPI_DATA_SIZE_8BIT;       // æ•°æ®ä½å®½
+    stcSpiInit.u32FirstBit = SPI_FIRST_MSB;            // é«˜ä½åœ¨å‰
+    stcSpiInit.u32FrameLevel = SPI_1_FRAME;            // 1å¸§(å°±æ˜¯åœ¨SPIçš„æ•°æ®å¯„å­˜å™¨SPI_DRä¸­å¿…é¡»å†™å…¥å¤šå°‘å¸§æ•°æ®åï¼Œè¿™äº›æ•°æ®æ‰ä¼šè¢«å‘é€åˆ°ä¼ è¾“ç¼“å†²åŒº)
     (void)SPI_Init(SPI_UNIT, &stcSpiInit);
     SPI_Cmd(SPI_UNIT, ENABLE);
 
-    /* ÅäÖÃ DC ºÍ RST */
+    /* é…ç½® DC å’Œ RST */
     (void)GPIO_StructInit(&stcGpioInit);
     stcGpioInit.u16PinState = PIN_STAT_SET;
     stcGpioInit.u16PinDir = PIN_DIR_OUT;
     (void)GPIO_Init(SPI_DC_PORT, SPI_DC_PIN, &stcGpioInit);
     (void)GPIO_Init(SPI_RST_PORT, SPI_RST_PIN, &stcGpioInit);
 
-    /* DMA ÅäÖÃ */
+    /* DMA é…ç½® */
     FCG_Fcg0PeriphClockCmd(DMA_CLK, ENABLE);
     (void)DMA_StructInit(&stcDmaInit);
     stcDmaInit.u32BlockSize = 1UL;
     stcDmaInit.u32TransCount = SPI_BUF_LEN;
     stcDmaInit.u32DataWidth = DMA_DATAWIDTH_8BIT;
-    /* ÅäÖÃ TX */
-    stcDmaInit.u32IntEn = DMA_INT_ENABLE;          // ´ò¿ªDMAÖĞ¶Ï
-    stcDmaInit.u32SrcAddrInc = DMA_SRC_ADDR_INC;   // Ô´µØÖ·×ÔÔö
-    stcDmaInit.u32DestAddrInc = DMA_DEST_ADDR_FIX; // Ä¿±êµØÖ·¹Ì¶¨
+    /* é…ç½® TX */
+    stcDmaInit.u32IntEn = DMA_INT_ENABLE;          // æ‰“å¼€DMAä¸­æ–­
+    stcDmaInit.u32SrcAddrInc = DMA_SRC_ADDR_INC;   // æºåœ°å€è‡ªå¢
+    stcDmaInit.u32DestAddrInc = DMA_DEST_ADDR_FIX; // ç›®æ ‡åœ°å€å›ºå®š
     stcDmaInit.u32DestAddr = (uint32_t)(&SPI_UNIT->DR);
     if (LL_OK != DMA_Init(DMA_UNIT, DMA_TX_CH, &stcDmaInit))
     {
@@ -79,7 +79,7 @@ void SPI_Config(void)
     }
     AOS_SetTriggerEventSrc(DMA_TX_TRIG_CH, SPI_TX_EVT_SRC);
 
-    /* DMA ÖĞ¶ÏÅäÖÃ */
+    /* DMA ä¸­æ–­é…ç½® */
     stcIrqSignConfig.enIntSrc = DMA_TX_INT_SRC;
     stcIrqSignConfig.enIRQn = DMA_TX_IRQ_NUM;
     stcIrqSignConfig.pfnCallback = &DMA_TransCompleteCallback;
@@ -88,7 +88,7 @@ void SPI_Config(void)
     NVIC_SetPriority(stcIrqSignConfig.enIRQn, DDL_IRQ_PRIO_DEFAULT);
     NVIC_EnableIRQ(stcIrqSignConfig.enIRQn);
 
-    /* Ê¹ÄÜ DMA ºÍ Í¨µÀ £¬²¢ÇÒ¹Ø±Õ spi £¨·½±ãºóÃæÓÃdma£©*/
+    /* ä½¿èƒ½ DMA å’Œ é€šé“ ï¼Œå¹¶ä¸”å…³é—­ spi ï¼ˆæ–¹ä¾¿åé¢ç”¨dmaï¼‰*/
     SPI_Cmd(SPI_UNIT, DISABLE);
     DMA_Cmd(DMA_UNIT, ENABLE);
     DMA_ChCmd(DMA_UNIT, DMA_TX_CH, ENABLE);
@@ -99,10 +99,10 @@ void DMA_SPI_Send(void *TxBuf, uint16_t TxLen)
     enTxCompleteFlag = RESET;
     DMA_SetSrcAddr(DMA_UNIT, DMA_TX_CH, (uint32_t)TxBuf);
     DMA_SetTransCount(DMA_UNIT, DMA_TX_CH, TxLen);
-    /* Ê¹ÄÜ DMA ºÍ SPI */
+    /* ä½¿èƒ½ DMA å’Œ SPI */
     DMA_ChCmd(DMA_UNIT, DMA_TX_CH, ENABLE);
     SPI_Cmd(SPI_UNIT, ENABLE);
-    /* µÈ´ı DMA ´«ÊäÍê³ÉÖĞ¶Ï */
+    /* ç­‰å¾… DMA ä¼ è¾“å®Œæˆä¸­æ–­ */
     while (enTxCompleteFlag == RESET)
     {
     }

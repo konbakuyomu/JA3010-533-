@@ -74,6 +74,11 @@
         "hgo1286440.h": "c",
         "string.h": "c",
         "malloc.h": "c",
-        "stdbool.h": "c"
+        "stdbool.h": "c",
+        "stdio.h": "c",
+        "limits.h": "c",
+        "hc32_ll_def.h": "c",
+        "hc32f4xx.h": "c",
+        "hc32f460.h": "c"
     }
 }

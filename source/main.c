@@ -31,7 +31,6 @@
 static void AppTaskCreate(void *pvParameters);
 static void AstraTask(void *pvParameters);
 static void LEDTask(void *pvParameters);
-static void BTNTask(void *pvParameters);
 
 /**
  * @brief  初始化板级外设
@@ -50,10 +49,13 @@ void BSP_Init(void)
   BSP_CLK_Init();
   /* 外部时钟源32kb初始化 */
   BSP_XTAL32_Init();
-  /* SPI初始化 */
-  SPI_Config();
   /*  (测试)LED初始化 */
   BSP_LED_Init();
+  /* EEPROM初始化 */
+  BSP_24CXX_Init();
+  BSP_24CXX_Read(EEPROM_BASE_ADDR, (uint8_t *)&data, sizeof(ProbeData));
+  /* SPI初始化 */
+  SPI_Config();
   /* 注册读取按键电平函数,按键初始化 */
   TEST_KEY_GPIO_Init();
   btn_attach_read_io_func(btn_read_level);
@@ -66,6 +68,8 @@ void BSP_Init(void)
   TMR0_Start(TMR0_UNIT, TMR0_CH);
   /* 异步时钟源，写入TMR0寄存器需要等待三个异步时钟。 */
   DDL_DelayMS(1U);
+  /* 初始化CAN总线 */
+  CAN_Drv_Init();
 }
 
 /**
@@ -156,10 +160,35 @@ static void AppTaskCreate(void *pvParameters)
   if (xReturn != pdPASS)
   {
   }
-  //-------------------------创建软件定时器----------------------------------
 
+  /* 创建CAN发送任务 */
+  xReturn = xTaskCreate((TaskFunction_t)CanTxTask,          /* 任务入口函数 */
+                        (const char *)"CanTxTask",          /* 任务名字 */
+                        (uint16_t)configMINIMAL_STACK_SIZE, /* 任务栈大小 */
+                        (void *)NULL,                       /* 任务入口函数参数 */
+                        (UBaseType_t)3,                     /* 任务的优先级 */
+                        (TaskHandle_t *)&CanTxTask_Handle); /* 任务控制块指针 */
+  if (xReturn != pdPASS)
+  {
+  }
+
+  /* 创建CAN接收任务 */
+  xReturn = xTaskCreate((TaskFunction_t)CANRxTask,          /* 任务入口函数 */
+                        (const char *)"CanRxTask",          /* 任务名字 */
+                        (uint16_t)configMINIMAL_STACK_SIZE, /* 任务栈大小 */
+                        (void *)NULL,                       /* 任务入口函数参数 */
+                        (UBaseType_t)3,                     /* 任务的优先级 */
+                        (TaskHandle_t *)&CanRxTask_Handle); /* 任务控制块指针 */
+  if (xReturn != pdPASS)
+  {
+  }
+  //----------------------------创建队列------------------------------------
+  xQueue_CanTx = xQueueCreate(10, sizeof(stc_can_tx_frame_t));
+  xQueue_WarningUpdate = xQueueCreate(10, sizeof(WarningUpdateMessage));
   //-------------------------创建事件标志组----------------------------------
   xInit_EventGroup = xEventGroupCreate();
+  //-------------------------创建软件定时器----------------------------------
+  xDoseRateTimer = xTimerCreate("DoseRateTimer", pdMS_TO_TICKS(1000), pdTRUE, (void *)0, vDoseRateTimerCallback);
   //-------------------------结束创建----------------------------------
 
   vTaskDelete(AppTaskCreate_Handle); // 删除AppTaskCreate任务
@@ -182,85 +211,58 @@ static void LEDTask(void *pvParameters)
 }
 
 /**
- * @brief  按键任务
+ * @brief  CAN发送任务
  * @param pvParameters 任务参数
- * @note   按键检测
+ * @note   发送CAN总线
  * @return none
  */
-static void BTNTask(void *pvParameters)
+void CanTxTask(void *pvParameters)
 {
-  btn_event_t ret;
-  uint8_t btn_io_num;
+  stc_can_tx_frame_t tx_frame;
+  bool firstRun = true;
 
   for (;;)
   {
-    if (btn_available() > 0)
+    while (xQueueReceive(xQueue_CanTx, &tx_frame, portMAX_DELAY) == pdTRUE) // 从CAN发送队列中接收数据
     {
-      btn_read_event(&btn_io_num, &ret);
-
-      // 根据返回的事件类型执行相应的操作
-      switch (ret)
+      // 第一次不执行等待CAN总线
+      if (!firstRun)
       {
-      case btn_not_press:
+        ulTaskNotifyTake(pdTRUE, portMAX_DELAY); // 等待CAN总线发送完成
+      }
+      else
       {
-
-        break;
+        firstRun = false;
       }
 
-      case btn_up:
-      {
-
-        break;
-      }
-
-      case btn_long_press:
-      {
-
-        break;
-      }
-
-      case btn_long_press_trig:
-      {
-
-        break;
-      }
-
-      case btn_down:
-      {
-        if (btn_io_num == KEY_BUTTON_1)
-        {
-          BSP_LED_Toggle(LED_RED);
-        }
-        else if (btn_io_num == KEY_BUTTON_2)
-        {
-          BSP_LED_Toggle(LED_BLUE);
-        }
-        break;
-      }
-
-      case btn_click:
-      {
-        break;
-      }
-
-      case btn_double_click:
-      {
-
-        break;
-      }
-
-      case btn_event_all:
-      {
-        // main分支修改
-
-
-        // home分支修改
-        // home分支修改
-        break;
-      }
-      }
+      CAN_IntCmd(CAN_UNIT, CAN_INT_PTB_TX, ENABLE);               // 使能发送中断
+      (void)CAN_FillTxFrame(CAN_UNIT, CAN_TX_BUF_PTB, &tx_frame); // 将发送帧的数据填充到发送缓冲区
+      CAN_StartTx(CAN_UNIT, CAN_TX_REQ_PTB);                      // 启动发送
     }
-    vTaskDelay(15 / portTICK_PERIOD_MS);
+  }
+}
+
+/**
+ * @brief  CAN接收任务
+ * @param pvParameters 任务参数
+ * @note   接收CAN总线
+ * @return none
+ */
+void CANRxTask(void *pvParameters)
+{
+  uint32_t u32NotificationValue;
+
+  for (;;)
+  {
+    // 等待CAN总线接收完成
+    u32NotificationValue = ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+
+    // 如果中断在这个处理期间再次发生，ulNotificationValue将会大于1，可以来处理所有积累的消息
+    while (u32NotificationValue > 0)
+    {
+      CAN_ProcessReceivedData();
+      u32NotificationValue--;
+    }
   }
 }
 

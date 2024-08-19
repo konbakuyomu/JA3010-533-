@@ -98,7 +98,8 @@
           "../../drivers/freeRTOS/port/GCC/ARM_CM4F",
           "../../drivers/bsp/gif",
           "../../drivers/bsp/can",
-          "../../drivers/drv/can"
+          "../../drivers/drv/can",
+          "../../drivers/bsp/components/ProbeDataManager"
         ],
         "libList": [],
         "defineList": [

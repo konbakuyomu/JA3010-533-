@@ -10,6 +10,8 @@
 #include "string"
 #include <vector>
 #include <array>
+#include <string>
+#include <functional>
 #include <charconv>
 #include <algorithm>
 #include <system_error>
@@ -62,7 +64,7 @@ namespace astra
     [[nodiscard]] Position getItemPosition(unsigned char _index) const;
     virtual void childPosInit(const std::vector<float> &_camera) {}
     virtual void forePosInit() {}
-    virtual int getSelectedIndex() const { return -1; }
+    virtual int getSelectedIndex() const { return selectIndex; }
     virtual Menu *findTileAncestor()
     {
       if (this->getType() == "Tile")
@@ -159,7 +161,6 @@ namespace astra
   public:
     void childPosInit(const std::vector<float> &_camera) override;
     void forePosInit() override;
-    int getSelectedIndex() const override { return selectIndex; }
 
     List();
     // 如果不使用 explicit，编译器可能会在某些情况下进行隐式转换，这可能导致意外的行为
@@ -224,8 +225,21 @@ namespace astra
 
   public:
     virtual void init() {};
+    virtual void init(int32_t u32ID) {};
     virtual void init(ExitDirection _direction) override {};
     virtual void deInit() {};
+
+  public:
+    // 在 namespace yomu 中添加以下结构体定义
+    struct ConfirmResult
+    {
+      bool isConfirmed;
+      float value;
+      int probeId;
+
+      ConfirmResult(bool confirmed = false, float val = 0.0f, int id = -1)
+          : isConfirmed(confirmed), value(val), probeId(id) {}
+    };
 
   public: // 处理用户输入
     virtual void onLeft() {};
@@ -233,7 +247,7 @@ namespace astra
     virtual void onUp() {};
     virtual void onDown() {};
     virtual std::pair<bool, bool> onConfirm() { return {false, false}; }
-    virtual bool onConfirm(int _index) { return false; }
+    virtual ConfirmResult onConfirm(int _index) { return {false, 0.0f, -1};}
     virtual ExitDirection shouldExit() const { return ExitDirection::None; }
 
   public:

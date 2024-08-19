@@ -2,12 +2,12 @@
 
 /******************************函数定义*******************************/
 
-/***********************************************************************
- * @ 函数名  ： CAN_IrqCallback
- * @ 功能说明： CAN中断处理函数
- * @ 参数    ：
- * @ 返回值  ： 无
- *********************************************************************/
+/**
+ * @brief  CAN中断处理函数
+ * @param  无
+ * @retval 无
+ * @note   此函数处理CAN的发送和接收中断，并通知相应的任务
+ */
 void CAN_IrqCallback(void)
 {
 	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
@@ -15,27 +15,27 @@ void CAN_IrqCallback(void)
 	if (CAN_GetStatus(CAN_UNIT, CAN_FLAG_PTB_TX) == SET)
 	{
 		CAN_ClearStatus(CAN_UNIT, CAN_FLAG_PTB_TX);
+		vTaskNotifyGiveFromISR(CanTxTask_Handle, &xHigherPriorityTaskWoken);
 		CAN_IntCmd(CAN_UNIT, CAN_INT_PTB_TX, DISABLE);
 	}
 
 	if (CAN_GetStatus(CAN_UNIT, CAN_FLAG_RX) == SET)
 	{
 		CAN_ClearStatus(CAN_UNIT, CAN_FLAG_RX);
-		// vTaskNotifyGiveFromISR(vCanRxHandle, &xHigherPriorityTaskWoken);
+		vTaskNotifyGiveFromISR(CanRxTask_Handle, &xHigherPriorityTaskWoken);
 		CAN_IntCmd(CAN_UNIT, CAN_INT_RX, DISABLE);
 	}
 
 	CAN_ClearStatus(CAN_UNIT, CAN_FLAG_PTB_TX | CAN_FLAG_RX);
-
 	portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
 
-/***********************************************************************
- * @ 函数名  ： CAN_ProcessReceivedData
- * @ 功能说明： 接收CAN数据处理函数，1.CAN总线自检接收处理 2.正常CAN数据收发处理
- * @ 参数    ：
- * @ 返回值  ： 无
- *********************************************************************/
+/**
+ * @brief  接收CAN数据处理函数
+ * @param  无
+ * @retval 无
+ * @note   此函数处理接收到的CAN数据，包括CAN总线自检接收处理和正常CAN数据收发处理
+ */
 void CAN_ProcessReceivedData(void)
 {
 	uint8_t u8RxFrameNum = 0U;
@@ -72,132 +72,276 @@ void CAN_ProcessReceivedData(void)
 	CAN_IntCmd(CAN_UNIT, CAN_INT_RX, ENABLE);
 }
 
-/***********************************************************************
- * @ 函数名  ： ProcessCANFrame
- * @ 功能说明： CAN正常接收到数据处理函数
- * @ 参数    ： @stc_can_rx_frame_t：接收的数据帧
- * @ 返回值  ： 无
- *********************************************************************/
+/**
+ * @brief  CAN正常接收到数据处理函数
+ * @param  Rx_Data 接收的数据帧
+ * @retval 无
+ * @note   此函数根据接收到的CAN数据帧的内容进行相应的处理
+ */
 void ProcessCANFrame(stc_can_rx_frame_t Rx_Data)
 {
-	if (Rx_Data.u32ID == CAN_FILTER1_ID || Rx_Data.u32ID == CAN_FILTER2_ID || Rx_Data.u32ID == CAN_FILTER3_ID || Rx_Data.u32ID == CAN_FILTER4_ID)
+	switch (Rx_Data.au8Data[0])
 	{
-		switch (Rx_Data.au8Data[0])
+	case CAN_TX_SELF_CHECK:
+	{
+		// 检查 Rx_Data.au8Data[3] 到 Rx_Data.au8Data[7] 是否都是 0xFF
+		if (Rx_Data.au8Data[3] == 0xFF &&
+			Rx_Data.au8Data[4] == 0xFF &&
+			Rx_Data.au8Data[5] == 0xFF &&
+			Rx_Data.au8Data[6] == 0xFF &&
+			Rx_Data.au8Data[7] == 0xFF)
 		{
-		case CAN_TX_SELF_CHECK:
-		{
-			// 检查 Rx_Data.au8Data[3] 到 Rx_Data.au8Data[7] 是否都是 0xFF
-			if (Rx_Data.au8Data[3] == 0xFF &&
-				Rx_Data.au8Data[4] == 0xFF &&
-				Rx_Data.au8Data[5] == 0xFF &&
-				Rx_Data.au8Data[6] == 0xFF &&
-				Rx_Data.au8Data[7] == 0xFF)
+			// 自检高压正常
+			if (Rx_Data.au8Data[1] == CAN_RX_DATA_TYPE_SELF_CHECK_HIGH_VOLTAGE_NORMAL)
 			{
-				// 自检高压正常
-				if (Rx_Data.au8Data[1] == CAN_RX_DATA_TYPE_SELF_CHECK_HIGH_VOLTAGE_NORMAL)
+				switch (Rx_Data.u32ID)
 				{
-				}
-				// 自检高压异常
-				else if (Rx_Data.au8Data[1] == CAN_RX_DATA_TYPE_SELF_CHECK_HIGH_VOLTAGE_ABNORMAL)
-				{
-				}
-
-				// 自检低量程计数管正常
-				if (Rx_Data.au8Data[2] == CAN_RX_DATA_TYPE_SELF_CHECK_LOW_RANGE_COUNTER_NORMAL)
-				{
-				}
-				else
-				{
+				case CAN_FILTER1_ID:
+					xEventGroupSetBits(xInit_EventGroup, WAIT_PROBE1_CONNECT_CHECK | WAIT_PROBE1_HV_CHECK);
+					break;
+				case CAN_FILTER2_ID:
+					xEventGroupSetBits(xInit_EventGroup, WAIT_PROBE2_CONNECT_CHECK | WAIT_PROBE2_HV_CHECK);
+					break;
+				case CAN_FILTER3_ID:
+					xEventGroupSetBits(xInit_EventGroup, WAIT_PROBE3_CONNECT_CHECK | WAIT_PROBE3_HV_CHECK);
+					break;
+				case CAN_FILTER4_ID:
+					xEventGroupSetBits(xInit_EventGroup, WAIT_PROBE4_CONNECT_CHECK | WAIT_PROBE4_HV_CHECK);
+					break;
+				default:
+					break;
 				}
 			}
-			break;
-		}
-		case CAN_TX_CLEAR_CUMULATIVE_DOSE:
-		{
-			// 检查 Rx_Data.au8Data[2] 到 Rx_Data.au8Data[7] 是否都是 0xFF
-			if (Rx_Data.au8Data[2] == 0xFF &&
-				Rx_Data.au8Data[3] == 0xFF &&
-				Rx_Data.au8Data[4] == 0xFF &&
-				Rx_Data.au8Data[5] == 0xFF &&
-				Rx_Data.au8Data[6] == 0xFF &&
-				Rx_Data.au8Data[7] == 0xFF)
+			// 自检低量程计数管正常
+			if (Rx_Data.au8Data[2] == CAN_RX_DATA_TYPE_SELF_CHECK_LOW_RANGE_COUNTER_NORMAL)
 			{
-				if (Rx_Data.au8Data[1] == CAN_RX_DATA_TYPE_CLEAR_CUMULATIVE_DOSE_SUCCESS)
+				switch (Rx_Data.u32ID)
 				{
-					// 累计剂量清零成功
-				}
-				else if (Rx_Data.au8Data[1] == CAN_RX_DATA_TYPE_CLEAR_CUMULATIVE_DOSE_FAIL)
-				{
-					// 累计剂量清零失败
+				case CAN_FILTER1_ID:
+					xEventGroupSetBits(xInit_EventGroup, WAIT_PROBE1_CONNECT_CHECK | WAIT_PROBE1_COUNT_CHECK);
+					break;
+				case CAN_FILTER2_ID:
+					xEventGroupSetBits(xInit_EventGroup, WAIT_PROBE2_CONNECT_CHECK | WAIT_PROBE2_COUNT_CHECK);
+					break;
+				case CAN_FILTER3_ID:
+					xEventGroupSetBits(xInit_EventGroup, WAIT_PROBE3_CONNECT_CHECK | WAIT_PROBE3_COUNT_CHECK);
+					break;
+				case CAN_FILTER4_ID:
+					xEventGroupSetBits(xInit_EventGroup, WAIT_PROBE4_CONNECT_CHECK | WAIT_PROBE4_COUNT_CHECK);
+					break;
+				default:
+					break;
 				}
 			}
-			break;
 		}
-		case CAN_TX_SET_DOSE_RATE_ALARM:
+		break;
+	}
+	case CAN_TX_UPDATE_DOSE_RATE:
+	{
+		// 四字节剂量率数据float,低字节在前，高字节在后
+		union Float_T4o_4Byte doseRate_unit;
+		doseRate_unit.array[0] = Rx_Data.au8Data[1];
+		doseRate_unit.array[1] = Rx_Data.au8Data[2];
+		doseRate_unit.array[2] = Rx_Data.au8Data[3];
+		doseRate_unit.array[3] = Rx_Data.au8Data[4];
+
+		// 四字节累计剂量数据float,低字节在前，高字节在后
+		// union Float_T4o_4Byte cumulativeDose_unit;
+		// cumulativeDose_unit.array[0] = Rx_Data.au8Data[5];
+		// cumulativeDose_unit.array[1] = Rx_Data.au8Data[6];
+		// cumulativeDose_unit.array[2] = Rx_Data.au8Data[7];
+		// cumulativeDose_unit.array[3] = Rx_Data.au8Data[8];
+
+		WarningUpdateMessage UpdateMessage = {0};
+		UpdateMessage.doseRate = doseRate_unit.buff;
+		UpdateMessage.cumulativeDose = doseRate_unit.buff;
+
+		// 判断剂量率是否大于10000 μSv/h
+		if (UpdateMessage.doseRate > 10000)
+			UpdateMessage.p = true;
+		else
+			UpdateMessage.p = false;
+
+		// 判断累计剂量是否大于10000 μSv
+		// if (UpdateMessage.cumulativeDose > 10000)
+		// 	UpdateMessage.d = true;
+		// else
+		// 	UpdateMessage.d = false;
+
+		// 根据探头ID发送更新消息
+		switch (Rx_Data.u32ID)
 		{
-			// 四字节剂量率报警阈值数据float,低字节在前，高字节在后
-			union Float_T4o_4Byte converter;
-
-			converter.array[0] = Rx_Data.au8Data[1];
-			converter.array[1] = Rx_Data.au8Data[2];
-			converter.array[2] = Rx_Data.au8Data[3];
-			converter.array[3] = Rx_Data.au8Data[4];
+		case CAN_FILTER1_ID:
+			UpdateMessage.label = "前方";
+			xQueueSend(xQueue_WarningUpdate, &UpdateMessage, portMAX_DELAY);
 			break;
-		}
-
+		case CAN_FILTER2_ID:
+			UpdateMessage.label = "后方";
+			xQueueSend(xQueue_WarningUpdate, &UpdateMessage, portMAX_DELAY);
+			break;
+		case CAN_FILTER3_ID:
+			UpdateMessage.label = "左方";
+			xQueueSend(xQueue_WarningUpdate, &UpdateMessage, portMAX_DELAY);
+			break;
+		case CAN_FILTER4_ID:
+			UpdateMessage.label = "右方";
+			xQueueSend(xQueue_WarningUpdate, &UpdateMessage, portMAX_DELAY);
+			break;
 		default:
 			break;
 		}
 
-		// 设置探头连接标志位
-		// xEventGroupSetBits(xInit_EventGroup, WAIT_PROBE_CONNECT_CHECK);
+		break;
+	}
+
+	default:
+		break;
 	}
 }
 
-/***********************************************************************
- * @ 函数名  ： HostCanBusSendData
- * @ 功能说明： 主机CAN总线发送数据 函数
- * @ 参数    ： @uint8_t CAN_ID: 发送到具体对应的探头
- * @ 参数    ： @uint16_t data_type：判断是下发高压还是甄别电压
- * @ 参数    ： @uint8_t Voltage：电压值
- * @ 返回值  ： 无
- *********************************************************************/
-// void HostCanBusSendData(uint8_t CAN_ID, uint8_t data_type, uint8_t *Voltage)
-// {
-// 	stc_can_tx_frame_t stcTx;
+/**
+ * @brief  CAN总线发送自检命令的函数
+ * @param  u32ID 探头的ID
+ * @retval 无
+ * @note   此函数根据接收到的CAN数据帧的内容进行相应的处理
+ */
+void CAN_SendSelfCheckCommand(uint32_t u32ID)
+{
+	if (u32ID != CAN_FILTER1_ID && u32ID != CAN_FILTER2_ID && u32ID != CAN_FILTER3_ID && u32ID != CAN_FILTER4_ID)
+	{
+		return;
+	}
 
-// 	stcTx.u32Ctrl = 0x0UL;						 // 初始化CAN发送帧的控制域
-// 	stcTx.u32ID = CAN_TX_DISCRIMINATION_VOLTAGE; // 主机往探头端下发 甄别电压/高压数据 ID
-// 	stcTx.IDE = 0UL;							 // CAN发送帧的ID类型，这里是标准帧
-// 	stcTx.DLC = CAN_TX_DLC;
+	stc_can_tx_frame_t stcTx;
 
-// 	for (uint8_t i = 0; i < CAN_TX_DATA_SIZE; i++)
-// 	{
-// 		stcTx.au8Data[i] = 0xFF;
-// 	}
+	stcTx.au8Data[0] = CAN_TX_SELF_CHECK;
+	for (uint8_t i = 1; i < CAN_TX_DLC; i++)
+	{
+		stcTx.au8Data[i] = 0xFF;
+	}
 
-// 	if (data_type == CAN_TX_DATA_TYPE_HIGH_VOLTAGE)
-// 	{
-// 		stcTx.au8Data[0] = CAN_ID;
-// 		stcTx.au8Data[1] = CAN_TX_DATA_TYPE_HIGH_VOLTAGE;
-// 		stcTx.au8Data[2] = Voltage[0];
-// 		stcTx.au8Data[3] = Voltage[1];
-// 		stcTx.au8Data[4] = Voltage[2];
-// 	}
-// 	else if (data_type == CAN_TX_DATA_TYPE_DETECT_VOLTAGE)
-// 	{
-// 		stcTx.au8Data[0] = CAN_ID;
-// 		stcTx.au8Data[1] = CAN_TX_DATA_TYPE_DETECT_VOLTAGE;
-// 		stcTx.au8Data[2] = Voltage[0];
-// 		stcTx.au8Data[3] = Voltage[1];
-// 		stcTx.au8Data[4] = Voltage[2];
-// 		stcTx.au8Data[5] = Voltage[3];
-// 	}
-// 	else
-// 	{
-// 		return;
-// 	}
+	stcTx.u32Ctrl = 0x0UL;							 //  初始化CAN发送帧的控制域
+	stcTx.IDE = 0UL;								 //  CAN发送帧的ID类型, 0: 标准帧, 1: 扩展帧
+	stcTx.u32ID = u32ID;							 //  CAN发送帧的ID
+	stcTx.DLC = CAN_TX_DLC;							 //  CAN发送帧的数据长度
+	xQueueSend(xQueue_CanTx, &stcTx, portMAX_DELAY); //  将发送帧加入到发送队列
+}
 
-// 	xQueueSend(xQueue_CanTx, &stcTx, portMAX_DELAY);		 // 发送CAN总线发送队列
-// 	xEventGroupSetBits(ScreenEventGroup, CAN_TX_START_FLAG); // 发送CAN总线发送开始标志
-// }
+/**
+ * @brief  CAN总线发送累计剂量清零命令的函数
+ * @param  u32ID 探头的ID
+ * @retval 无
+ * @note   此函数根据接收到的CAN数据帧的内容进行相应的处理
+ */
+void CAN_SendClearCumulativeDoseCommand(uint32_t u32ID)
+{
+	if (u32ID != CAN_FILTER1_ID && u32ID != CAN_FILTER2_ID && u32ID != CAN_FILTER3_ID && u32ID != CAN_FILTER4_ID)
+	{
+		return;
+	}
+
+	stc_can_tx_frame_t stcTx;
+
+	stcTx.au8Data[0] = CAN_TX_CLEAR_CUMULATIVE_DOSE;
+	for (uint8_t i = 1; i < CAN_TX_DLC; i++)
+	{
+		stcTx.au8Data[i] = 0xFF;
+	}
+
+	stcTx.u32Ctrl = 0x0UL;							 //  初始化CAN发送帧的控制域
+	stcTx.IDE = 0UL;								 //  CAN发送帧的ID类型, 0: 标准帧, 1: 扩展帧
+	stcTx.u32ID = u32ID;							 //  CAN发送帧的ID
+	stcTx.DLC = CAN_TX_DLC;							 //  CAN发送帧的数据长度
+	xQueueSend(xQueue_CanTx, &stcTx, portMAX_DELAY); //  将发送帧加入到发送队列
+}
+
+/**
+ * @brief  CAN总线发送剂量报警阈值设置命令的函数
+ * @param  u32ID 探头的ID
+ * @param  f32DoseRateAlarmThreshold 剂量报警阈值
+ * @retval 无
+ * @note   此函数根据接收到的CAN数据帧的内容进行相应的处理
+ */
+void CAN_SendDoseRateAlarmThresholdCommand(uint32_t u32ID, float f32DoseRateAlarmThreshold)
+{
+	if (u32ID != CAN_FILTER1_ID && u32ID != CAN_FILTER2_ID && u32ID != CAN_FILTER3_ID && u32ID != CAN_FILTER4_ID)
+	{
+		return;
+	}
+
+	stc_can_tx_frame_t stcTx;
+
+	stcTx.au8Data[0] = CAN_TX_SET_DOSE_RATE_ALARM;
+	union Float_T4o_4Byte converter;
+	converter.buff = f32DoseRateAlarmThreshold;
+	stcTx.au8Data[1] = converter.array[0];
+	stcTx.au8Data[2] = converter.array[1];
+	stcTx.au8Data[3] = converter.array[2];
+	stcTx.au8Data[4] = converter.array[3];
+	for (uint8_t i = 5; i < CAN_TX_DLC; i++)
+	{
+		stcTx.au8Data[i] = 0xFF;
+	}
+
+	stcTx.u32Ctrl = 0x0UL;							 //  初始化CAN发送帧的控制域
+	stcTx.IDE = 0UL;								 //  CAN发送帧的ID类型, 0: 标准帧, 1: 扩展帧
+	stcTx.u32ID = u32ID;							 //  CAN发送帧的ID
+	stcTx.DLC = CAN_TX_DLC;							 //  CAN发送帧的数据长度
+	xQueueSend(xQueue_CanTx, &stcTx, portMAX_DELAY); //  将发送帧加入到发送队列
+}
+
+/**
+ * @brief  CAN总线发送上传剂量报警阈值命令的函数
+ * @param  u32ID 探头的ID
+ * @retval 无
+ * @note   此函数根据接收到的CAN数据帧的内容进行相应的处理
+ */
+void CAN_SendUploadDoseRateAlarmThresholdCommand(uint32_t u32ID)
+{
+	if (u32ID != CAN_FILTER1_ID && u32ID != CAN_FILTER2_ID && u32ID != CAN_FILTER3_ID && u32ID != CAN_FILTER4_ID)
+	{
+		return;
+	}
+
+	stc_can_tx_frame_t stcTx;
+
+	stcTx.au8Data[0] = CAN_TX_UPDATE_DOSE_RATE_ALARM;
+	for (uint8_t i = 1; i < CAN_TX_DLC; i++)
+	{
+		stcTx.au8Data[i] = 0xFF;
+	}
+
+	stcTx.u32Ctrl = 0x0UL;							 //  初始化CAN发送帧的控制域
+	stcTx.IDE = 0UL;								 //  CAN发送帧的ID类型, 0: 标准帧, 1: 扩展帧
+	stcTx.u32ID = u32ID;							 //  CAN发送帧的ID
+	stcTx.DLC = CAN_TX_DLC;							 //  CAN发送帧的数据长度
+	xQueueSend(xQueue_CanTx, &stcTx, portMAX_DELAY); //  将发送帧加入到发送队列
+}
+
+/**
+ * @brief  CAN总线发送上传剂量率和累计剂量命令的函数
+ * @param  u32ID 探头的ID
+ * @retval 无
+ * @note   此函数根据接收到的CAN数据帧的内容进行相应的处理
+ */
+void CAN_SendUploadDoseRateAndCumulativeDoseCommand(uint32_t u32ID)
+{
+	if (u32ID != CAN_FILTER1_ID && u32ID != CAN_FILTER2_ID && u32ID != CAN_FILTER3_ID && u32ID != CAN_FILTER4_ID)
+	{
+		return;
+	}
+
+	stc_can_tx_frame_t stcTx;
+
+	stcTx.au8Data[0] = CAN_TX_UPDATE_DOSE_RATE;
+	for (uint8_t i = 1; i < CAN_TX_DLC; i++)
+	{
+		stcTx.au8Data[i] = 0xFF;
+	}
+
+	stcTx.u32Ctrl = 0x0UL;							 //  初始化CAN发送帧的控制域
+	stcTx.IDE = 0UL;								 //  CAN发送帧的ID类型, 0: 标准帧, 1: 扩展帧
+	stcTx.u32ID = u32ID;							 //  CAN发送帧的ID
+	stcTx.DLC = CAN_TX_DLC;							 //  CAN发送帧的数据长度
+	xQueueSend(xQueue_CanTx, &stcTx, portMAX_DELAY); //  将发送帧加入到发送队列
+}

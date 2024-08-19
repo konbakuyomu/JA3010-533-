@@ -1,3 +1,4 @@
+#include "ProbeDataManager.h"
 #include "page.h"
 
 namespace yomu
@@ -131,6 +132,102 @@ namespace yomu
      */
     void NumberEditor::init()
     {
+        // 设置标题字体
+        HAL::setFont(astra::getUIConfig().logoCopyRightFont);
+
+        // 初始化通用属性
+        xTitle = (HAL::getSystemConfig().screenWeight - HAL::getFontWidth(title)) / 2;
+        xTitleTrg = xTitle;
+        yTitle = 0 - astra::getUIConfig().logoTextHeight - 1;
+        yTitleTrg = HAL::getSystemConfig().screenHeight / 2 - astra::getUIConfig().logoTextHeight;
+
+        xExit = astra::getUIConfig().selectorMargin;
+        xExitTrg = xExit;
+        yExit = systemConfig.screenHeight;
+        yExitTrg = systemConfig.screenHeight - astraConfig.tileTextBottomMargin / 2;
+
+        float numberWidth = HAL::getFontWidth(confirm_button);
+        xConfirm = HAL::getSystemConfig().screenWeight - xExit - numberWidth;
+        xConfirmTrg = xConfirm;
+        yConfirm = yExit;
+        yConfirmTrg = yExitTrg;
+
+        yNumber = yTitle;
+        yNumberTrg = yTitleTrg + 20;
+
+        // 进行第一次初始化
+        if (!this->is_init)
+        {
+            this->is_init = true;
+
+            // 格式化数字
+            std::string temp = Number;
+            const int charSpacing = astra::getUIConfig().numberEditorCharMargin;
+            float totalWidth = 0;
+            digits.clear();
+            dotIndex = -1;
+
+            for (char c : temp)
+            {
+                std::string charStr(1, c);
+                totalWidth += HAL::getFontWidth(charStr);
+
+                if (c >= '0' && c <= '9')
+                {
+                    countNumber++;
+                    digits.push_back(c - '0');
+                }
+                else if (c == '.')
+                    dotIndex = countNumber - 1;
+            }
+
+            totalWidth += (temp.length() - 1) * charSpacing;
+            firstDigitX = (systemConfig.screenWeight - totalWidth) / 2.0f;
+        }
+
+        // 初始化选择框
+        currentIndex = 0;
+        updateSelectionTarget(currentIndex);
+        ySelection = systemConfig.screenHeight + 1;
+        xSelection = xSelectionTrg;
+        wSelection = wSelectionTrg;
+        hSelection = hSelectionTrg;
+
+        // 字体还原
+        HAL::setFont(astra::getUIConfig().mainFont);
+
+        // 只有当单位不为空时才初始化单位的位置
+        if (!unit.empty())
+        {
+            float unitWidth = HAL::getFontWidth(unit);
+            xUnit = (HAL::getSystemConfig().screenWeight - unitWidth) / 2;
+            xUnitTrg = xUnit;
+            yUnit = systemConfig.screenHeight;
+            yUnitTrg = yExitTrg; // 与"取消"和"确认"按钮在同一高度
+        }
+    }
+
+    /**
+     * @brief 初始化NumberEditor对象
+     *
+     * @param u32ID 探头ID，用于区分不同的探头
+     *
+     * @details 该函数负责初始化NumberEditor对象的各项属性，包括：
+     *          1. 设置标题的位置和动画
+     *          2. 设置退出和确认按钮的位置
+     *          3. 格式化输入的数字字符串
+     *          4. 计算并设置数字显示的位置
+     *          5. 初始化选择框的位置和大小
+     *
+     * @note 该函数仅在第一次调用时执行初始化操作，之后的调用将不会重复执行
+     *       探头ID参数允许为不同探头设置不同的初始化行为
+     *
+     * @see NumberEditor::render() 渲染函数，使用这里初始化的属性进行绘制
+     */
+    void NumberEditor::init(int32_t u32ID)
+    {
+        this->m_u32ProbeID = u32ID;
+
         // 设置标题字体
         HAL::setFont(astra::getUIConfig().logoCopyRightFont);
 
@@ -439,44 +536,81 @@ namespace yomu
      * 检查是否点击了取消或确认按钮。
      *
      * @param _index 按钮索引（0为取消，1为确认）
-     * @return bool 如果点击了相应的按钮则返回true，否则返回false
+     * @return ConfirmResult 包含确认状态、数值和探头ID的结构体
      */
-    bool NumberEditor::onConfirm(int _index)
+    astra::Page::ConfirmResult NumberEditor::onConfirm(int _index)
     {
-        if (_index == 0)
+        bool isConfirmed = false;
+        float value = 0.0f;
+
+        if (_index == 0 && currentIndex == 0)
         {
-            if (currentIndex == 0)
-            {
-                return true;
-            }
+            isConfirmed = true;
         }
-        else if (_index == 1)
+        else if (_index == 1 && currentIndex == countNumber - 1)
         {
-            if (currentIndex == countNumber - 1)
-            {
-                return true;
-            }
+            isConfirmed = true;
+            value = convertToFloat();
         }
 
-        return false;
+        return ConfirmResult(isConfirmed, value, m_u32ProbeID);
     }
 
     //--------------------------------------------------------------------------
 
     /**
-     * @brief GammaDashboard类的构造函数
+     * @brief GammaDashboard类的构造函数(剂量率界面)
      *
      * 初始化Gamma仪表盘，设置标签和显示行数。
      *
      * @param labels 要显示的标签列表
      */
     GammaDashboard::GammaDashboard(const std::vector<std::string> &labels)
+        : m_isAccumulatedDose(false) // 剂量率界面
     {
         this->title = "";
         this->pic = generateDefaultPic();
         this->m_labels = labels;
-        // 返回参数中较小的那个，可以这里把最大数量限制到了4个
         this->m_displayLines = std::min(labels.size(), size_t(4));
+
+        m_rowCoordinates.clear();
+        for (size_t i = 0; i < m_displayLines; ++i)
+        {
+            RowCoordinates row;
+            row.value = "0";
+            m_rowCoordinates.push_back(row);
+        }
+
+        registerObserver_doseRate(); // 注册观察者
+    }
+
+    /**
+     * @brief GammaDashboard类的构造函数(累计剂量界面)
+     *
+     * 初始化Gamma仪表盘，设置标签和显示行数。
+     *
+     * @param labels 要显示的标签列表
+     * @param temp 用于判断是哪个界面
+     */
+    GammaDashboard::GammaDashboard(const std::vector<std::string> &labels, int temp)
+        : m_isAccumulatedDose(true) // 累计剂量界面
+    {
+        this->title = "";
+        this->pic = generateDefaultPic();
+        this->m_labels = labels;
+        this->m_displayLines = std::min(labels.size(), size_t(4));
+
+        m_rowCoordinates.clear();
+        for (size_t i = 0; i < m_displayLines; ++i)
+        {
+            RowCoordinates row;
+
+            row.value = "0";
+            row.unit = "μGy";
+            m_rowCoordinates.push_back(row);
+        }
+
+        registerObserver_cumulativeDose(); // 注册观察者
     }
 
     /**
@@ -505,64 +639,76 @@ namespace yomu
 
         // 计算总宽度和起始 X 坐标
         totalWidth = labelWidth + valueWidth + unitWidth + 30; // 20 为间隔
+        // 设置默认单位
+        std::string defaultUnit = m_isAccumulatedDose ? "μGy" : "μGy/h";
 
-        if (!this->is_init)
+        // 确保 m_rowCoordinates 的大小与 m_displayLines 匹配
+        m_rowCoordinates.resize(m_displayLines);
+
+        // 判断进入方向，并设置初始值
+        if (_direction == ExitDirection::Right)
         {
-            this->is_init = true;
-
-            // 先清空这个容器
-            m_rowCoordinates.clear();
-
-            if (_direction == ExitDirection::Right)
+            // 从右边进入
+            for (size_t i = 0; i < m_rowCoordinates.size(); ++i)
             {
-                // 从右边进入
-                for (size_t i = 0; i < m_displayLines; ++i)
+                auto &row = m_rowCoordinates[i];
+                // 如果已经初始化，并且是累计剂量界面
+                if (m_isAccumulatedDose)
                 {
-                    RowCoordinates row;
-                    row.xRow = systemConfig.screenWeight + 1;
-                    row.xRowTrg = (systemConfig.screenWeight - totalWidth) / 2;
-                    row.value = "10000";
-                    row.unit = "μGy/h";
-                    m_rowCoordinates.push_back(row);
+                    switch (i)
+                    {
+                    case 0:
+                        row.value = std::to_string(data.probe1_cumulative_dose);
+                        break;
+                    case 1:
+                        row.value = std::to_string(data.probe2_cumulative_dose);
+                        break;
+                    case 2:
+                        row.value = std::to_string(data.probe3_cumulative_dose);
+                        break;
+                    case 3:
+                        row.value = std::to_string(data.probe4_cumulative_dose);
+                        break;
+                    }
                 }
-            }
-            else
-            {
-                // 从左边进入
-                for (size_t i = 0; i < m_displayLines; ++i)
-                {
-                    RowCoordinates row;
-                    row.xRow = 0 - totalWidth;
-                    row.xRowTrg = (systemConfig.screenWeight - totalWidth) / 2;
-                    row.value = "10000";
-                    row.unit = "μGy/h";
-                    m_rowCoordinates.push_back(row);
-                }
+                row.unit = defaultUnit;
+                row.xRow = systemConfig.screenWeight + 1;
+                row.xRowTrg = (systemConfig.screenWeight - totalWidth) / 2;
             }
         }
         else
         {
-            // 确保 m_rowCoordinates 的大小与 m_displayLines 匹配
-            m_rowCoordinates.resize(m_displayLines);
-
-            if (_direction == ExitDirection::Right)
+            // 从左边进入
+            for (size_t i = 0; i < m_rowCoordinates.size(); ++i)
             {
-                // 从右边进入
-                for (auto &row : m_rowCoordinates)
+                auto &row = m_rowCoordinates[i];
+                // 如果已经初始化，并且是累计剂量界面
+                if (m_isAccumulatedDose)
                 {
-                    row.xRow = systemConfig.screenWeight + 1;
-                    row.xRowTrg = (systemConfig.screenWeight - totalWidth) / 2;
+                    switch (i)
+                    {
+                    case 0:
+                        row.value = std::to_string(data.probe1_cumulative_dose);
+                        break;
+                    case 1:
+                        row.value = std::to_string(data.probe2_cumulative_dose);
+                        break;
+                    case 2:
+                        row.value = std::to_string(data.probe3_cumulative_dose);
+                        break;
+                    case 3:
+                        row.value = std::to_string(data.probe4_cumulative_dose);
+                        break;
+                    }
                 }
+                row.unit = defaultUnit;
+                row.xRow = 0 - totalWidth;
+                row.xRowTrg = (systemConfig.screenWeight - totalWidth) / 2;
             }
-            else
-            {
-                // 从左边进入
-                for (auto &row : m_rowCoordinates)
-                {
-                    row.xRow = 0 - totalWidth;
-                    row.xRowTrg = (systemConfig.screenWeight - totalWidth) / 2;
-                }
-            }
+        }
+        if (!this->is_init)
+        {
+            this->is_init = true;
         }
     }
 
@@ -583,6 +729,13 @@ namespace yomu
 
         // 绘制元素
         HAL::setDrawType(1);
+
+        // 接收数值更新消息
+        WarningUpdateMessage UpdateMessage = {0};
+        if (xQueueReceive(xQueue_WarningUpdate, &UpdateMessage, 0) == pdPASS)
+        {
+            ProbeDataManager::getInstance().updateProbeData(UpdateMessage.label, UpdateMessage.doseRate, UpdateMessage.cumulativeDose, UpdateMessage.p, UpdateMessage.d);
+        }
 
         // C++ 11 的写法
         // 自动遍历 m_rowCoordinates 中的每个元素
@@ -620,6 +773,31 @@ namespace yomu
     }
 
     /**
+     * @brief 注册观察者(剂量率界面)
+     *
+     * @note 使用静态局部变量实现的单例模式，可以确保这些资源只被初始化一次，避免了重复初始化和资源浪费
+     * @note 将观察者函数添加到探头数据管理器中，以便接收探头数据更新。
+     */
+    void GammaDashboard::registerObserver_doseRate()
+    {
+        // 使用静态局部变量实现的单例模式，可以确保这些资源只被初始化一次，避免了重复初始化和资源浪费
+        ProbeDataManager::getInstance().addObserver([this](const ProbeDataManager::ProbeData &data)
+                                                    { this->updateRowData(data.label, std::to_string(static_cast<int>(data.doseRate)), "μGy/h"); });
+    }
+
+    /**
+     * @brief 注册观察者(累计剂量界面)
+     *
+     * @note 使用静态局部变量实现的单例模式，可以确保这些资源只被初始化一次，避免了重复初始化和资源浪费
+     * @note 将观察者函数添加到探头数据管理器中，以便接收探头数据更新。
+     */
+    void GammaDashboard::registerObserver_cumulativeDose()
+    {
+        ProbeDataManager::getInstance().addObserver([this](const ProbeDataManager::ProbeData &data)
+                                                    { this->updateRowData(data.label, std::to_string(static_cast<int>(data.cumulativeDose)), "μGy"); });
+    }
+
+    /**
      * @brief 更新行数据
      *
      * 根据给定的标签，更新对应行的值和单位。
@@ -651,6 +829,31 @@ namespace yomu
         if (index >= m_rowCoordinates.size())
         {
             return false;
+        }
+
+        if (m_isAccumulatedDose)
+        {
+            switch (index)
+            {
+            case 0:
+                data.probe1_cumulative_dose = std::stoi(newValue);
+                EEPROM_WRITE(data, probe1_cumulative_dose);
+                break;
+            case 1:
+                data.probe2_cumulative_dose = std::stoi(newValue);
+                EEPROM_WRITE(data, probe2_cumulative_dose);
+                break;
+            case 2:
+                data.probe3_cumulative_dose = std::stoi(newValue);
+                EEPROM_WRITE(data, probe3_cumulative_dose);
+                break;
+            case 3:
+                data.probe4_cumulative_dose = std::stoi(newValue);
+                EEPROM_WRITE(data, probe4_cumulative_dose);
+                break;
+            default:
+                break;
+            }
         }
 
         // 更新值
@@ -747,8 +950,21 @@ namespace yomu
         this->title = "";
         this->pic = generateDefaultPic();
         this->m_labels = labels;
-        // 返回参数中较小的那个，可以这里把最大数量限制到了4个
         this->m_displayLines = std::min(labels.size(), size_t(4));
+
+        // 清空容器，并初始进行初始化(不能放在init函数中，因为init函数会被反复调用)
+        m_rowCoordinates.clear();
+        for (size_t i = 0; i < m_displayLines; ++i)
+        {
+            RowCoordinates row;
+            row.xRow = systemConfig.screenWeight + 1;
+            row.xRowTrg = (systemConfig.screenWeight - totalWidth) / 2;
+            row.p = false;
+            row.d = false;
+            m_rowCoordinates.push_back(row);
+        }
+
+        registerObserver(); // 注册观察者
     }
 
     /**
@@ -776,55 +992,25 @@ namespace yomu
         // 计算总宽度和起始 X 坐标
         totalWidth = labelWidth + (charWidth * 2) + 30; // 30 为间隔
 
-        // 先清空这个容器
-        m_rowCoordinates.clear();
-
-        // float xPDX = systemConfig.screenWeight - (charWidth * 3) - 30; // 30 为右边距
+        // 确保 m_rowCoordinates 的大小与 m_displayLines 匹配
+        m_rowCoordinates.resize(m_displayLines);
 
         if (_direction == ExitDirection::Right)
         {
-            // 从右边进入
-            for (size_t i = 0; i < m_displayLines; ++i)
+            for (auto &row : m_rowCoordinates)
             {
-                RowCoordinates row;
                 row.xRow = systemConfig.screenWeight + 1;
                 row.xRowTrg = (systemConfig.screenWeight - totalWidth) / 2;
-                row.p = false;
-                row.d = false;
-                m_rowCoordinates.push_back(row);
             }
         }
         else
         {
-            // 从左边进入
-            for (size_t i = 0; i < m_displayLines; ++i)
+            for (auto &row : m_rowCoordinates)
             {
-                RowCoordinates row;
                 row.xRow = 0 - totalWidth;
                 row.xRowTrg = (systemConfig.screenWeight - totalWidth) / 2;
-                row.p = false;
-                row.d = false;
-                m_rowCoordinates.push_back(row);
             }
         }
-
-        // 测试
-        static uint8_t count = 0;
-        if (count == 0)
-        {
-            updateWarningStatus("前方", true, false);
-            updateWarningStatus("后方", true, true);
-            updateWarningStatus("左方", false, true);
-            updateWarningStatus("测试", true, false);
-        }
-        if (count == 1)
-        {
-            updateWarningStatus("前方", false, true);
-            updateWarningStatus("后方", false, false);
-            updateWarningStatus("左方", true, false);
-            updateWarningStatus("测试", false, true);
-        }
-        count++;
     }
 
     /**
@@ -842,6 +1028,13 @@ namespace yomu
             HAL::canvasClear();
 
         HAL::setDrawType(1);
+
+        // 接收警告更新消息
+        WarningUpdateMessage UpdateMessage = {0};
+        if (xQueueReceive(xQueue_WarningUpdate, &UpdateMessage, 0) == pdPASS)
+        {
+            ProbeDataManager::getInstance().updateProbeData(UpdateMessage.label, UpdateMessage.doseRate, UpdateMessage.cumulativeDose, UpdateMessage.p, UpdateMessage.d);
+        }
 
         for (auto &row : m_rowCoordinates)
         {
@@ -877,6 +1070,18 @@ namespace yomu
             return ExitDirection::Left;
 
         return ExitDirection::None;
+    }
+
+    /**
+     * @brief 注册观察者
+     *
+     * 将观察者函数添加到探头数据管理器中，以便接收探头数据更新。
+     */
+    void PDXDashboard::registerObserver()
+    {
+        // 这里的data其实就是 updateProbeData 的auto it，也就是指向m_probeData的迭代器
+        ProbeDataManager::getInstance().addObserver([this](const ProbeDataManager::ProbeData &data)
+                                                    { this->updateWarningStatus(data.label, data.p, data.d); });
     }
 
     /**
