@@ -46,7 +46,7 @@ namespace astra
     float listLineHeight = 16; // 列表行高
 
     // 选择器样式设置
-    float selectorRadius = 0.5f; // 选择器圆角半径
+    float selectorRadius = 0.0f; // 选择器圆角半径
     float selectorMargin = 4;    // 选择器与文字左边距
     float selectorTopMargin = 2; // 选择器与文字上边距
 
@@ -99,12 +99,13 @@ namespace astra
     // 数字编辑页面设置
     float numberEditorCharMargin = 7;                  // 字符之间的间隔像素数
     float numberEditorCharMoveLengthwithoutDot = 12.5; // 字符之间选中框每次移动的长度(中间没有小数点)
-    float numberEditorCharMoveLengthwithDot = 20;      // 字符之间选中框每次移动的长度(中间有小数点)
+    float numberEditorCharMoveLengthwithDot = 25;      // 字符之间选中框每次移动的长度(中间有小数点)
   };
 
+  // 
   static config &getUIConfig()
   {
-    static config astraConfig;
+    static config astraConfig; // 
     return astraConfig;
   }
 }

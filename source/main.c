@@ -30,7 +30,7 @@
  ******************************************************************************/
 static void AppTaskCreate(void *pvParameters);
 static void AstraTask(void *pvParameters);
-static void LEDTask(void *pvParameters);
+static void UsartTask(void *pvParameters);
 
 /**
  * @brief  初始化板级外设
@@ -51,16 +51,42 @@ void BSP_Init(void)
   BSP_XTAL32_Init();
   /*  (测试)LED初始化 */
   BSP_LED_Init();
+  /* USART初始化 */
+  USART_Config();
   /* EEPROM初始化 */
   BSP_24CXX_Init();
+  memset(&data, 0, sizeof(ProbeData));
+  // data.probe1_realtime_dose = 0;
+  // data.probe2_realtime_dose = 0;
+  // data.probe3_realtime_dose = 0;
+  // data.probe4_realtime_dose = 0;
+  // data.probe1_cumulative_dose = 0;
+  // data.probe2_cumulative_dose = 0;
+  // data.probe3_cumulative_dose = 0;
+  // data.probe4_cumulative_dose = 0;
+  // data.probe1_cumulative_alarm_threshold = 100000;
+  // data.probe2_cumulative_alarm_threshold = 10;
+  // data.probe3_cumulative_alarm_threshold = 10;
+  // data.probe4_cumulative_alarm_threshold = 10;
+  // data.probe1_realtime_alarm_threshold = 10;
+  // data.probe2_realtime_alarm_threshold = 10;
+  // data.probe3_realtime_alarm_threshold = 10;
+  // data.probe4_realtime_alarm_threshold = 10;
+  // BSP_24CXX_Write(EEPROM_BASE_ADDR, (uint8_t *)&data, sizeof(ProbeData));
   BSP_24CXX_Read(EEPROM_BASE_ADDR, (uint8_t *)&data, sizeof(ProbeData));
   /* SPI初始化 */
   SPI_Config();
+  /* PWM初始化 */
+  PWM_Config();
   /* 注册读取按键电平函数,按键初始化 */
   TEST_KEY_GPIO_Init();
   btn_attach_read_io_func(btn_read_level);
   btn_attach(KEY_BUTTON_1, 0);
   btn_attach(KEY_BUTTON_2, 0);
+  btn_attach(KEY_BUTTON_3, 0);
+  btn_attach(KEY_BUTTON_4, 0);
+  /* 蜂鸣器初始化 */
+  BEEP_GPIO_Init();
   /* 随机数生成器 TRNG 初始化配置 */
   TrngConfig();
   /* 开启通用定时器TMR0定时(3ms)：给按键检测库提供心跳 */
@@ -70,6 +96,9 @@ void BSP_Init(void)
   DDL_DelayMS(1U);
   /* 初始化CAN总线 */
   CAN_Drv_Init();
+  /* 注册键值线程锁回调函数及键值初始化 */
+  key_value_mutex_init();
+  Key_Value_Init();
 }
 
 /**
@@ -150,13 +179,13 @@ static void AppTaskCreate(void *pvParameters)
   {
   }
 
-  /* 创建LED任务 */
-  xReturn = xTaskCreate((TaskFunction_t)LEDTask,            /* 任务入口函数 */
-                        (const char *)"LED_Task",           /* 任务名字 */
+  /* 创建USART任务 */
+  xReturn = xTaskCreate((TaskFunction_t)UsartTask,          /* 任务入口函数 */
+                        (const char *)"UsartTask",          /* 任务名字 */
                         (uint16_t)configMINIMAL_STACK_SIZE, /* 任务栈大小 */
                         (void *)NULL,                       /* 任务入口函数参数 */
                         (UBaseType_t)3,                     /* 任务的优先级 */
-                        (TaskHandle_t *)&LEDTask_Handle);   /* 任务控制块指针 */
+                        (TaskHandle_t *)&UsartTask_Handle); /* 任务控制块指针 */
   if (xReturn != pdPASS)
   {
   }
@@ -184,11 +213,17 @@ static void AppTaskCreate(void *pvParameters)
   }
   //----------------------------创建队列------------------------------------
   xQueue_CanTx = xQueueCreate(10, sizeof(stc_can_tx_frame_t));
-  xQueue_WarningUpdate = xQueueCreate(10, sizeof(WarningUpdateMessage));
+  xQueue_ProbeInfoTransfer = xQueueCreate(10, sizeof(WarningUpdateMessage));
   //-------------------------创建事件标志组----------------------------------
   xInit_EventGroup = xEventGroupCreate();
+  xProbeDataSendEventGroup = xEventGroupCreate();
   //-------------------------创建软件定时器----------------------------------
   xDoseRateTimer = xTimerCreate("DoseRateTimer", pdMS_TO_TICKS(1000), pdTRUE, (void *)0, vDoseRateTimerCallback);
+  xBeepTimer = xTimerCreate("BeepTimer", pdMS_TO_TICKS(500), pdTRUE, (void *)0, vBeepTimerCallback);
+  xProbe1AlarmTimer = xTimerCreate("Probe1AlarmTimer", pdMS_TO_TICKS(5000), pdTRUE, (void *)0, vProbe1AlarmTimerCallback);
+  xProbe2AlarmTimer = xTimerCreate("Probe2AlarmTimer", pdMS_TO_TICKS(5000), pdTRUE, (void *)0, vProbe2AlarmTimerCallback);
+  xProbe3AlarmTimer = xTimerCreate("Probe3AlarmTimer", pdMS_TO_TICKS(5000), pdTRUE, (void *)0, vProbe3AlarmTimerCallback);
+  xProbe4AlarmTimer = xTimerCreate("Probe4AlarmTimer", pdMS_TO_TICKS(5000), pdTRUE, (void *)0, vProbe4AlarmTimerCallback);
   //-------------------------结束创建----------------------------------
 
   vTaskDelete(AppTaskCreate_Handle); // 删除AppTaskCreate任务
@@ -196,18 +231,38 @@ static void AppTaskCreate(void *pvParameters)
 }
 
 /**
- * @brief  LED任务
+ * @brief  USART任务
  * @param pvParameters 任务参数
- * @note   LED闪烁
+ * @note   接收USART数据并发送
  * @return none
  */
-static void LEDTask(void *pvParameters)
+static void UsartTask(void *pvParameters)
 {
+  uint32_t u32ReceiveLen = 0;
+  uint8_t *pUsartBuffer = (uint8_t *)mymalloc(APP_FRAME_LEN_MAX);
+
+  if (pUsartBuffer == NULL)
+  {
+    // 内存分配失败，处理错误
+    for (;;)
+    {
+      // 可以在这里添加错误处理代码，如闪烁LED等
+    }
+  }
+
   for (;;)
   {
-    BSP_LED_Toggle(LED_YELLOW);
-    vTaskDelay(1000 / portTICK_PERIOD_MS);
+    if (xTaskNotifyWait(0x00, ULONG_MAX, &u32ReceiveLen, portMAX_DELAY) == pdTRUE)
+    {
+      memcpy(pUsartBuffer, m_au8RxBuf, u32ReceiveLen);
+      key_value_msg("UART_sendData", pUsartBuffer, u32ReceiveLen);
+      memset(m_au8RxBuf, 0, sizeof(m_au8RxBuf));
+    }
   }
+
+  // 注意：这里的myfree不会被执行到，因为任务是一个无限循环
+  // 如果需要释放内存，应该在任务删除的回调函数中进行
+  // myfree(pUsartBuffer);
 }
 
 /**

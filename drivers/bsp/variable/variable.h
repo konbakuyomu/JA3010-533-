@@ -31,6 +31,8 @@ extern "C"
 /* bsp 头文件 */
 #include "bsp_spi.h"
 #include "bsp_can.h"
+#include "bsp_pwm.h"
+#include "bsp_usart.h"
 #include "button.h"
 
 /* drv 头文件 */
@@ -44,16 +46,34 @@ extern "C"
 #include "timers.h"
 #include "semphr.h"
 
+/* components 头文件 */
+#include "key_value_transation.h"
+
 /* 宏定义 ------------------------------------------------------------------*/
-#define KEYIN1_PORT                (GPIO_PORT_E)
-#define KEYIN1_PIN                 (GPIO_PIN_04)
-#define KEYIN2_PORT                (GPIO_PORT_E)
-#define KEYIN2_PIN                 (GPIO_PIN_05)
+
+// 按键初始化
+#define KEYIN1_PORT                (GPIO_PORT_B)
+#define KEYIN1_PIN                 (GPIO_PIN_12)
+#define KEYIN2_PORT                (GPIO_PORT_B)
+#define KEYIN2_PIN                 (GPIO_PIN_13)
+#define KEYIN3_PORT                (GPIO_PORT_B)
+#define KEYIN3_PIN                 (GPIO_PIN_14)
+#define KEYIN4_PORT                (GPIO_PORT_B)
+#define KEYIN4_PIN                 (GPIO_PIN_15)
 #define KEY_BUTTON_1               1
 #define KEY_BUTTON_2               2
+#define KEY_BUTTON_3               3
+#define KEY_BUTTON_4               4
 #define BOTTON_TIC_MS              3 // 按键扫描心跳速度(单位:ms)
 
-// 初始化页面时等待的事件标志组位
+// 蜂鸣器初始化
+#define BEEP_PORT                 (GPIO_PORT_D)
+#define BEEP_PIN                  (GPIO_PIN_15)
+#define BEEP_ON()                 GPIO_SetPins(BEEP_PORT, BEEP_PIN)
+#define BEEP_OFF()                GPIO_ResetPins(BEEP_PORT, BEEP_PIN)
+#define BEEP_TOGGLE()             GPIO_TogglePins(BEEP_PORT, BEEP_PIN)
+
+/* 初始化页面时等待的事件标志组位 */ 
 // 连接状态标志位
 #define WAIT_PROBE1_CONNECT_CHECK  (1 << 0)
 #define WAIT_PROBE2_CONNECT_CHECK  (1 << 1)
@@ -69,6 +89,26 @@ extern "C"
 #define WAIT_PROBE2_COUNT_CHECK    (1 << 9)
 #define WAIT_PROBE3_COUNT_CHECK    (1 << 10)
 #define WAIT_PROBE4_COUNT_CHECK    (1 << 11)
+
+/* 探头数据发送及蜂鸣器处理及探头状态事件标志位 */
+// 判断当前界面标志位
+#define CURRENT_INTERFACE_FLAG_CIRCLE   (1 << 0)
+#define CURRENT_INTERFACE_FLAG_TREE     (1 << 1)
+#define CURRENT_INTERFACE_FLAG_ANOTHER  (1 << 2)
+#define BEEP_FLAG_CHECK                 (1 << 3)
+// 探头1状态标志位
+#define PROBE1_ALARM_FLAG               (1 << 4)
+#define PROBE1_POPUP_FLAG               (1 << 5)
+// 探头2状态标志位
+#define PROBE2_ALARM_FLAG               (1 << 6)
+#define PROBE2_POPUP_FLAG               (1 << 7)
+// 探头3状态标志位
+#define PROBE3_ALARM_FLAG               (1 << 8)
+#define PROBE3_POPUP_FLAG               (1 << 9)
+// 探头4状态标志位
+#define PROBE4_ALARM_FLAG               (1 << 10)
+#define PROBE4_POPUP_FLAG               (1 << 11)
+
 // 所有探头连接检查
 #define ALL_CONNECT_CHECK          (WAIT_PROBE1_CONNECT_CHECK | WAIT_PROBE2_CONNECT_CHECK | WAIT_PROBE3_CONNECT_CHECK | WAIT_PROBE4_CONNECT_CHECK)
 // 所有探头HV检查
@@ -110,6 +150,7 @@ extern "C"
     typedef struct
     {
         char *label;          // 标签
+        uint8_t probeNumber;  // 探头编号
         bool p;               // 是否有p报警
         bool d;               // 是否有d报警
         float doseRate;       // 剂量率
@@ -118,15 +159,24 @@ extern "C"
 
     typedef struct
     {
-        uint32_t probe1_cumulative_dose;
-        uint32_t probe2_cumulative_dose;
-        uint32_t probe3_cumulative_dose;
-        uint32_t probe4_cumulative_dose;
-        uint32_t probe1_alarm_threshold;
-        uint32_t probe2_alarm_threshold;
-        uint32_t probe3_alarm_threshold;
-        uint32_t probe4_alarm_threshold;
+        float probe1_cumulative_dose; // 探头1累计剂量
+        float probe2_cumulative_dose; // 探头2累计剂量
+        float probe3_cumulative_dose; // 探头3累计剂量
+        float probe4_cumulative_dose; // 探头4累计剂量
+        float probe1_realtime_dose; // 探头1实时剂量
+        float probe2_realtime_dose; // 探头2实时剂量
+        float probe3_realtime_dose; // 探头3实时剂量
+        float probe4_realtime_dose; // 探头4实时剂量
+        float probe1_cumulative_alarm_threshold; // 探头1累计剂量报警阈值
+        float probe2_cumulative_alarm_threshold; // 探头2累计剂量报警阈值
+        float probe3_cumulative_alarm_threshold; // 探头3累计剂量报警阈值
+        float probe4_cumulative_alarm_threshold; // 探头4累计计量报警阈值
+        float probe1_realtime_alarm_threshold; // 探头1实时剂量报警阈值
+        float probe2_realtime_alarm_threshold; // 探头2实时剂量报警阈值
+        float probe3_realtime_alarm_threshold; // 探头3实时剂量报警阈值
+        float probe4_realtime_alarm_threshold; // 探头4实时剂量报警阈值
     } ProbeData;
+
     /* 全局变量 ----------------------------------------------------------------*/
     /*-------------------- FreeRTOS --------------------*/
     /* freertos 任务句柄 */
@@ -136,24 +186,37 @@ extern "C"
     extern TaskHandle_t BTNTask_Handle;       // 按键任务句柄
     extern TaskHandle_t CanTxTask_Handle;     // CAN发送任务句柄
     extern TaskHandle_t CanRxTask_Handle;     // CAN接收任务句柄
+    extern TaskHandle_t UsartTask_Handle;     // 串口任务句柄
     /* freertos 队列句柄 */
-    extern QueueHandle_t xQueue_CanTx;         // CAN发送队列
-    extern QueueHandle_t xQueue_WarningUpdate; // 警告更新队列
+    extern QueueHandle_t xQueue_CanTx;              // CAN发送队列
+    extern QueueHandle_t xQueue_ProbeInfoTransfer;  // 探头信息队列
     /* freertos 事件标志组句柄 */
-    extern EventGroupHandle_t xInit_EventGroup; // 初始化事件标志组
+    extern EventGroupHandle_t xInit_EventGroup;         // 初始化事件标志组
+    extern EventGroupHandle_t xProbeDataSendEventGroup; // 根据界面判断是否发送探头数据事件标志组
     /* freertos 软件定时器句柄 */
-    extern TimerHandle_t xDoseRateTimer; // 定时器服务任务句柄
+    extern TimerHandle_t xDoseRateTimer;    // 提醒探头上传剂量率和累积剂量软件定时器句柄
+    extern TimerHandle_t xBeepTimer;        // 蜂鸣器控制软件定时器句柄
+    extern TimerHandle_t xProbe1AlarmTimer; // 探头1报警软件定时器句柄
+    extern TimerHandle_t xProbe2AlarmTimer; // 探头2报警软件定时器句柄
+    extern TimerHandle_t xProbe3AlarmTimer; // 探头3报警软件定时器句柄
+    extern TimerHandle_t xProbe4AlarmTimer; // 探头4报警软件定时器句柄
 
     /*-------------------- EEPROM --------------------*/
     extern ProbeData data;
 
-    /*-------------------- 图形库 --------------------*/
-    extern const unsigned char *epd_bitmap_allArray[29];
+    /*-------------------- 标志位 --------------------*/
+    extern bool g_bUsartInitialized; // 串口初始化完成标志位
+
+    /*--------------------- 串口 ---------------------*/
+    extern uint8_t m_au8RxBuf[APP_FRAME_LEN_MAX]; // 串口接收缓冲区
 
     /* 函数声明 ----------------------------------------------------------------*/
 
+    // 初始化函数
+    void formatFloat(float value, char *buffer, size_t bufferSize);
     void BSP_Init(void);
     void TEST_KEY_GPIO_Init(void);
+    void BEEP_GPIO_Init(void);
     uint8_t btn_read_level(uint8_t io);
     void TrngConfig(void);
     void TMR0_Config(void);
@@ -162,10 +225,18 @@ extern "C"
     void CanTxTask(void *pvParameters);
     void CANRxTask(void *pvParameters);
     void vDoseRateTimerCallback(TimerHandle_t xTimer);
-
+    void vBeepTimerCallback(TimerHandle_t xTimer);
+    void vProbe1AlarmTimerCallback(TimerHandle_t xTimer);
+    void vProbe2AlarmTimerCallback(TimerHandle_t xTimer);
+    void vProbe3AlarmTimerCallback(TimerHandle_t xTimer);
+    void vProbe4AlarmTimerCallback(TimerHandle_t xTimer);
+    
     // EEPROM读写函数
     int32_t writeMemberToEEPROM(uint16_t baseAddr, const ProbeData *sensor, size_t memberOffset, size_t memberSize);
     int32_t readMemberFromEEPROM(uint16_t baseAddr, ProbeData *sensor, size_t memberOffset, size_t memberSize);
+
+    // 键值对注册函数
+    void Key_Value_Init(void);
 
 #ifdef __cplusplus
 }

@@ -55,7 +55,7 @@
           "vendor": "HDSC",
           "cpuName": "HC32F46x"
         },
-        "proType": 0,
+        "proType": 1,
         "speed": 10000,
         "otherCmds": ""
       },
@@ -96,10 +96,13 @@
           "../../drivers/bsp/components/button",
           "../../drivers/freeRTOS/include",
           "../../drivers/freeRTOS/port/GCC/ARM_CM4F",
-          "../../drivers/bsp/gif",
           "../../drivers/bsp/can",
           "../../drivers/drv/can",
-          "../../drivers/bsp/components/ProbeDataManager"
+          "../../drivers/bsp/components/ProbeDataManager",
+          "../../drivers/bsp/pwm",
+          "../../drivers/bsp/usart",
+          "../../drivers/bsp/components/key_value_transation",
+          "../../drivers/bsp/components/pic"
         ],
         "libList": [],
         "defineList": [
@@ -107,8 +110,58 @@
           "HC32F460",
           "USE_DDL_DRIVER"
         ]
+      },
+      "builderOptions": {
+        "GCC": {
+          "version": 5,
+          "beforeBuildTasks": [],
+          "afterBuildTasks": [],
+          "global": {
+            "$float-abi-type": "softfp",
+            "output-debug-info": "enable",
+            "misc-control": "--specs=nosys.specs --specs=nano.specs"
+          },
+          "c/cpp-compiler": {
+            "language-c": "c11",
+            "language-cpp": "c++14",
+            "optimization": "level-0",
+            "warnings": "all-warnings",
+            "one-elf-section-per-function": true,
+            "one-elf-section-per-data": true,
+            "CXX_FLAGS": "-Wno-main -Wno-unused-function",
+            "C_FLAGS": "-Wno-main -Wno-unused-function -Wno-missing-prototypes"
+          },
+          "asm-compiler": {},
+          "linker": {
+            "output-format": "elf",
+            "remove-unused-input-sections": true,
+            "LIB_FLAGS": "-lm",
+            "$toolName": "auto",
+            "LD_FLAGS": "-Wl,--no-warn-rwx-segments"
+          }
+        },
+        "AC5": {
+          "version": 4,
+          "beforeBuildTasks": [],
+          "afterBuildTasks": [],
+          "global": {
+            "use-microLIB": true,
+            "output-debug-info": "enable"
+          },
+          "c/cpp-compiler": {
+            "optimization": "level-0",
+            "one-elf-section-per-function": true,
+            "c99-mode": true,
+            "C_FLAGS": "--diag_suppress=1 --diag_suppress=1295",
+            "CXX_FLAGS": "--diag_suppress=1 --diag_suppress=1295"
+          },
+          "asm-compiler": {},
+          "linker": {
+            "output-format": "elf"
+          }
+        }
       }
     }
   },
-  "version": "3.4"
+  "version": "3.5"
 }

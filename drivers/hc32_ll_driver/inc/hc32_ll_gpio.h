@@ -66,18 +66,18 @@ typedef enum {
 } en_pin_state_t;
 
 /**
- * @brief  GPIO Init structure definition
+ * @brief  GPIO初始化结构体定义
  */
 typedef struct {
-    uint16_t u16PinState;       /*!< Set pin state to High or Low, @ref GPIO_PinState_Sel for details       */
-    uint16_t u16PinDir;         /*!< Pin mode setting, @ref GPIO_PinDirection_Sel for details               */
-    uint16_t u16PinOutputType;  /*!< Output type setting, @ref GPIO_PinOutType_Sel for details              */
-    uint16_t u16PinDrv;         /*!< Pin drive capacity setting, @ref GPIO_PinDrv_Sel for details           */
-    uint16_t u16Latch;          /*!< Pin latch setting, @ref GPIO_PinLatch_Sel for details                  */
-    uint16_t u16PullUp;         /*!< Internal pull-up resistor setting, @ref GPIO_PinPU_Sel for details     */
-    uint16_t u16Invert;         /*!< Pin input/output invert setting, @ref GPIO_PinInvert_Sel for details   */
-    uint16_t u16ExtInt;         /*!< External interrupt pin setting, @ref GPIO_PinExtInt_Sel for details    */
-    uint16_t u16PinAttr;        /*!< Digital or analog attribute setting, @ref GPIO_PinMode_Sel for details */
+    uint16_t u16PinState;       /*!< 设置引脚状态为高电平或低电平，详见 @ref GPIO_PinState_Sel       */
+    uint16_t u16PinDir;         /*!< 设置引脚方向（输入/输出），详见 @ref GPIO_PinDirection_Sel      */
+    uint16_t u16PinOutputType;  /*!< 设置输出类型（推挽/开漏），详见 @ref GPIO_PinOutType_Sel        */
+    uint16_t u16PinDrv;         /*!< 设置引脚驱动能力，详见 @ref GPIO_PinDrv_Sel                     */
+    uint16_t u16Latch;          /*!< 设置引脚锁存功能，详见 @ref GPIO_PinLatch_Sel                   */
+    uint16_t u16PullUp;         /*!< 设置内部上拉电阻，详见 @ref GPIO_PinPU_Sel                      */
+    uint16_t u16Invert;         /*!< 设置引脚输入/输出反转，详见 @ref GPIO_PinInvert_Sel             */
+    uint16_t u16ExtInt;         /*!< 设置外部中断引脚，详见 @ref GPIO_PinExtInt_Sel                  */
+    uint16_t u16PinAttr;        /*!< 设置数字或模拟属性，详见 @ref GPIO_PinMode_Sel                  */
 } stc_gpio_init_t;
 /**
  * @}

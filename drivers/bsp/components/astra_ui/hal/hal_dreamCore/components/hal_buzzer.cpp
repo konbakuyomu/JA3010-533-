@@ -3,18 +3,12 @@
 //
 #include "../hal_dreamCore.h"
 
-void HALDreamCore::_buzzer_init() {
-
+void HALDreamCore::_beepStart()
+{
+    key_value_msg("Beep_Start", NULL, 0);
 }
 
-void HALDreamCore::_beep(float _freq) {
-
-}
-
-void HALDreamCore::_beepStop() {
-
-}
-
-void HALDreamCore::_setBeepVol(unsigned char _vol) {
-
+void HALDreamCore::_beepStop()
+{
+    key_value_msg("Beep_Stop", NULL, 0);
 }

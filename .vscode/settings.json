@@ -79,6 +79,8 @@
         "limits.h": "c",
         "hc32_ll_def.h": "c",
         "hc32f4xx.h": "c",
-        "hc32f460.h": "c"
+        "hc32f460.h": "c",
+        "bsp_pwm.h": "c",
+        "hc32_ll_usart.h": "c"
     }
 }

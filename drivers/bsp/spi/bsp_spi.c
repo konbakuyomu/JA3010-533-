@@ -45,7 +45,7 @@ void SPI_Config(void)
     stcSpiInit.u32TransMode = SPI_SEND_ONLY;           // 只发送
     stcSpiInit.u32MasterSlave = SPI_MASTER_SLAVE;      // 主机模式
     stcSpiInit.u32Parity = SPI_PARITY_INVD;            // 禁用奇偶校验
-    stcSpiInit.u32SpiMode = SPI_MD_3;                  // SSD1306这个屏幕得使用MD_0模式
+    stcSpiInit.u32SpiMode = SPI_MD_0;                  // SSD1306这个屏幕得使用MD_0模式
     stcSpiInit.u32BaudRatePrescaler = SPI_BR_CLK_DIV4; // 时钟分频
     stcSpiInit.u32DataBits = SPI_DATA_SIZE_8BIT;       // 数据位宽
     stcSpiInit.u32FirstBit = SPI_FIRST_MSB;            // 高位在前

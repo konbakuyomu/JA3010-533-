@@ -26,28 +26,34 @@ extern "C"
 #define CAN_INT_SRC         (INT_SRC_CAN_INT)
 #define CAN_INT_IRQn        (INT122_IRQn)
 
-/* CAN interrupt type selection. */
+/* CAN中断类型选择 */
 #define CAN_INT_SEL         (CAN_INT_PTB_TX | CAN_INT_RX)
 
-/* Acceptance filter. */
+/* 过滤器选择 */
 #define CAN_FILTER_SEL      (CAN_FILTER1 | CAN_FILTER2 | CAN_FILTER3 | CAN_FILTER4)
 #define CAN_FILTER_NUM      (4U)
 
-#define CAN_FILTER1_ID      (0x40UL) // 探头1 ID
-#define CAN_FILTER1_ID_MASK (0x0UL)
+#define CAN_FILTER1_ID      (0x00004041UL) // 探头1 ID
+#define CAN_FILTER1_ID_MASK (0x000000FFUL)
 #define CAN_FILTER1_ID_TYPE (CAN_ID_STD_EXT) /*接受标准帧和扩展帧*/
 
-#define CAN_FILTER2_ID      (0x41UL) // 探头2 ID
-#define CAN_FILTER2_ID_MASK (0x0UL)
+#define CAN_FILTER2_ID      (0x00004141UL) // 探头2 ID
+#define CAN_FILTER2_ID_MASK (0x000000FFUL)
 #define CAN_FILTER2_ID_TYPE (CAN_ID_STD_EXT)
 
-#define CAN_FILTER3_ID      (0x42UL) // 探头3 ID
-#define CAN_FILTER3_ID_MASK (0x0UL)
+#define CAN_FILTER3_ID      (0x00004241UL) // 探头3 ID
+#define CAN_FILTER3_ID_MASK (0x000000FFUL)
 #define CAN_FILTER3_ID_TYPE (CAN_ID_STD_EXT)
 
-#define CAN_FILTER4_ID      (0x43UL) // 探头4 ID
-#define CAN_FILTER4_ID_MASK (0x0UL)
+#define CAN_FILTER4_ID      (0x00004341UL) // 探头4 ID
+#define CAN_FILTER4_ID_MASK (0x000000FFUL)
 #define CAN_FILTER4_ID_TYPE (CAN_ID_STD_EXT)
+
+/* 探头号 */
+#define CAN_PROBE1_ID (0x40)
+#define CAN_PROBE2_ID (0x41)
+#define CAN_PROBE3_ID (0x42)
+#define CAN_PROBE4_ID (0x43)
 
 /* 发送命令定义 */
 #define CAN_TX_SELF_CHECK               (0x41UL)    // 自检命令

@@ -147,6 +147,10 @@ public:
 
   virtual void _drawEnglish(float _x, float _y, const std::string &_text) {}
 
+  static void drawEnglish_str(float _x, float _y, const char *str) { get()->_drawEnglish_str(_x, _y, str); }
+
+  virtual void _drawEnglish_str(float _x, float _y, const char *str) {}
+
   static void drawChinese(float _x, float _y, const std::string &_text) { get()->_drawChinese(_x, _y, _text); }
 
   virtual void _drawChinese(float _x, float _y, const std::string &_text) {}
@@ -237,9 +241,9 @@ public:
    * @brief buzzer.
    * */
 public:
-  static void beep(float _freq) { get()->_beep(_freq); }
+  static void beepStart() { get()->_beepStart(); }
 
-  virtual void _beep(float _freq) {}
+  virtual void _beepStart() {}
 
   static void beepStop() { get()->_beepStop(); }
 

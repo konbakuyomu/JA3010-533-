@@ -37,9 +37,13 @@ namespace astra
 
   unsigned char Menu::getItemNum() const { return childMenu.size(); }
 
-  Menu *Menu::getNextMenu() const { return childMenu[selectIndex]; }
+  Menu *Menu::getNextMenu() const { return next; }
 
-  Menu *Menu::getPreview() const { return parent; }
+  Menu *Menu::getPreview() const { return preview; }
+
+  Menu *Menu::getchildMenu() const { return childMenu[selectIndex]; }
+
+  Menu *Menu::getParentMenu() const { return parent; }
 
   void Menu::deInit()
   {

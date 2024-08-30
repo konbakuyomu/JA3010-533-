@@ -4,10 +4,10 @@
 #include "../hal_dreamCore.h"
 #include "variable.h"
 
-void HALDreamCore::_hc32_hal_init()
-{ // NOLINT
-  // BSP_Init();
-  // LCD_Init();
+void HALDreamCore::_RTOS_Init()
+{ 
+  // 第一次启动的时候需要把这个允许弹窗的标志置位
+  xEventGroupSetBits(xProbeDataSendEventGroup, PROBE1_POPUP_FLAG | PROBE2_POPUP_FLAG | PROBE3_POPUP_FLAG | PROBE4_POPUP_FLAG);
 }
 
 void HALDreamCore::_delay(unsigned long _mill)

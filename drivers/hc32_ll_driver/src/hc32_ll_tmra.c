@@ -29,6 +29,7 @@
  ******************************************************************************/
 #include "hc32_ll_tmra.h"
 #include "hc32_ll_utility.h"
+#include "bsp_pwm.h"
 
 /**
  * @addtogroup LL_Driver
@@ -1125,9 +1126,34 @@ void TMRA_Stop(CM_TMRA_TypeDef *TMRAx)
     DDL_ASSERT(IS_TMRA_UNIT(TMRAx));
     CLR_REG8_BIT(TMRAx->BCSTRL, TMRA_BCSTRL_START);
 }
+
 /**
- * @}
+ * @brief  更改占空比
+ * @param  [in]  TMRAx                  指向TMRA实例寄存器基地址的指针
+ * @param  [in]  u32Ch                  TimerA的通道
+ * @param  [in]  fDutyCycle             占空比（0.0到1.0之间的小数）
+ * @retval 无
  */
+void TMRA_Update_PWM_DutyCycle(CM_TMRA_TypeDef *TMRAx, uint32_t u32Ch, float fDutyCycle)
+{
+    uint32_t u32CMPARAddr;
+    uint32_t u32CompareValue;
+    uint32_t u32PeriodVal = (HCLK1_FREQ / OLED_BRIGHTNESS_FREQ) - 1U; // 使用固定的频率,这里是800Hz
+
+    // 参数有效性检查
+    DDL_ASSERT(IS_TMRA_UNIT_CH(TMRAx, u32Ch));
+    DDL_ASSERT(fDutyCycle >= 0.0f && fDutyCycle <= 1.0f);
+
+    // 根据占空比和周期值计算比较值
+    u32CompareValue = (uint32_t)(((u32PeriodVal + 1U) * fDutyCycle) - 1U);
+
+    // 计算比较寄存器的地址
+    u32Ch *= 4U;
+    u32CMPARAddr = (uint32_t)&TMRAx->CMPAR1 + u32Ch;
+
+    // 更新比较值以改变占空比
+    SET_VAL_BY_ADDR(u32CMPARAddr, u32CompareValue);
+}
 
 #endif /* LL_TMRA_ENABLE */
 

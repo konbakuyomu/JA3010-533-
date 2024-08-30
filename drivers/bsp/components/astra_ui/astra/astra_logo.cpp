@@ -221,11 +221,15 @@ namespace astra
         // 等待动画结束，进行探头通信检测(5s),然后主标题和副标题准备从左侧滑出
         if (yBackGround == yBackGroundTrg && yTitle == yTitleTrg && ySubText == ySubTextTrg)
         {
+          uint8_t probeID = CAN_PROBE1_ID;
           // 发送自检命令(这一次是为了检测通信)
-          CAN_SendSelfCheckCommand(CAN_FILTER1_ID);
-          CAN_SendSelfCheckCommand(CAN_FILTER2_ID);
-          CAN_SendSelfCheckCommand(CAN_FILTER3_ID);
-          CAN_SendSelfCheckCommand(CAN_FILTER4_ID);
+          key_value_msg("CAN_SelfCheck", &probeID, sizeof(probeID));
+          probeID = CAN_PROBE2_ID;
+          key_value_msg("CAN_SelfCheck", &probeID, sizeof(probeID));
+          probeID = CAN_PROBE3_ID;
+          key_value_msg("CAN_SelfCheck", &probeID, sizeof(probeID));
+          probeID = CAN_PROBE4_ID;
+          key_value_msg("CAN_SelfCheck", &probeID, sizeof(probeID));
           // 等待自检结果
           uxBits = xEventGroupWaitBits(xInit_EventGroup, ALL_CONNECT_CHECK, pdTRUE, pdTRUE, pdMS_TO_TICKS(5000));
 
@@ -301,10 +305,14 @@ namespace astra
       else if (animationState == 4 && xTitle == xTitleTrg && xSubText == xSubTextTrg)
       {
         // 发送自检命令(这一次是为了检测高压)
-        CAN_SendSelfCheckCommand(CAN_FILTER1_ID);
-        CAN_SendSelfCheckCommand(CAN_FILTER2_ID);
-        CAN_SendSelfCheckCommand(CAN_FILTER3_ID);
-        CAN_SendSelfCheckCommand(CAN_FILTER4_ID);
+        uint8_t probeID = CAN_PROBE1_ID;
+        key_value_msg("CAN_SelfCheck", &probeID, sizeof(probeID));
+        probeID = CAN_PROBE2_ID;
+        key_value_msg("CAN_SelfCheck", &probeID, sizeof(probeID));
+        probeID = CAN_PROBE3_ID;
+        key_value_msg("CAN_SelfCheck", &probeID, sizeof(probeID));
+        probeID = CAN_PROBE4_ID;
+        key_value_msg("CAN_SelfCheck", &probeID, sizeof(probeID));
         // 等待高压检查完成或超时
         uxBits = xEventGroupWaitBits(xInit_EventGroup, ALL_HV_CHECK, pdTRUE, pdTRUE, pdMS_TO_TICKS(5000));
 
@@ -378,10 +386,15 @@ namespace astra
       else if (animationState == 8 && xTitle == xTitleTrg && xSubText == xSubTextTrg)
       {
         // 发送自检命令(这一次是为了检测计数)
-        CAN_SendSelfCheckCommand(CAN_FILTER1_ID);
-        CAN_SendSelfCheckCommand(CAN_FILTER2_ID);
-        CAN_SendSelfCheckCommand(CAN_FILTER3_ID);
-        CAN_SendSelfCheckCommand(CAN_FILTER4_ID);
+        uint8_t probeID = CAN_PROBE1_ID;
+        key_value_msg("CAN_SelfCheck", &probeID, sizeof(probeID));
+        probeID = CAN_PROBE2_ID;
+        key_value_msg("CAN_SelfCheck", &probeID, sizeof(probeID));
+        probeID = CAN_PROBE3_ID;
+        key_value_msg("CAN_SelfCheck", &probeID, sizeof(probeID));
+        probeID = CAN_PROBE4_ID;
+        key_value_msg("CAN_SelfCheck", &probeID, sizeof(probeID));
+
         // 等待通信自检完成或超时
         uxBits = xEventGroupWaitBits(xInit_EventGroup, ALL_COUNT_CHECK, pdTRUE, pdTRUE, pdMS_TO_TICKS(5000));
 

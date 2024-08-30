@@ -63,13 +63,13 @@ extern "C"
 
 // 功能使能配置
 #ifndef BUTTON_NUM
-#define BUTTON_NUM 2 // 如果配置文件未定义，则用户自定义 ，按键数量，0则关闭按钮库功能
+#define BUTTON_NUM 4 // 如果配置文件未定义，则用户自定义 ，按键数量，0则关闭按钮库功能
 #endif
 
 #if BUTTON_NUM
 
 #ifndef BUTTON_BUFFER_NUM
-#define BUTTON_BUFFER_NUM 2 //按钮存储缓冲区大小，此数值为最多存储多少个按钮,至少为1，不要比实际使用多设置，会消耗内存并占用更多cpu
+#define BUTTON_BUFFER_NUM 4 //按钮存储缓冲区大小，此数值为最多存储多少个按钮,至少为1，不要比实际使用多设置，会消耗内存并占用更多cpu
 #endif
 
 #define btn_double_click_time_default 300         // 双击识别间隔时间  默认300ms

@@ -9,14 +9,23 @@ namespace yomu
     class NumberEditor : public astra::Page
     {
     public:
-        explicit NumberEditor(std::string initialNumber);
-        NumberEditor(const std::string &_title, std::string initialNumber);
-        NumberEditor(const std::string &_title, const std::vector<unsigned char> &_pic, std::string initialNumber);
-        NumberEditor(const std::string &_title, std::string initialNumber, const std::string &unit);
+        enum class DoseType : uint8_t
+        {
+            RealTime = 0,  // 实时剂量
+            Cumulative = 1 // 累计剂量
+        };
+        enum class UnitState
+        {
+            Micro,
+            Milli,
+            Base
+        };
+
+    public:
+        NumberEditor(const std::string &_title, DoseType doseType);
 
     public:
         void init() override;
-        void init(int32_t u32ID) override;
         void render(const std::vector<float> &_camera) override;
 
     public:
@@ -35,7 +44,7 @@ namespace yomu
         std::string Number = "1000";
         std::string unit = "";
         int currentIndex = 0;    // 当前的选中框索引
-        int countNumber = 2;     // 当设置界面需要设置的字符数量（默认是加上了取消和确认键）
+        int countNumber = 0;     // 当设置界面需要设置的字符数量
         int dotIndex = -1;       // 当前小数点的索引，默认为-1，即没有小数点
         float firstDigitX = -1;  // 用于存储第一个数字的X坐标
         std::vector<int> digits; // 用于存储每一位数字
@@ -73,6 +82,13 @@ namespace yomu
         float wSelectionTrg = 0; // 选择框目标宽度
         float hSelectionTrg = 0; // 选择框目标高度
 
+        float maxUnitFrameWidth = 0;  // 单位框最大宽度
+        float maxUnitFrameHeight = 0; // 单位框最大高度
+
+    private:
+        DoseType m_doseType;        // 剂量类型
+        UnitState currentUnitState; // 当前单位状态(μ,m,none)
+
     private:
         void updateSelectionTarget(int index);
         void updateNumber(int index);
@@ -82,12 +98,15 @@ namespace yomu
     class GammaDashboard : public astra::Page
     {
     public:
-        GammaDashboard() = default;
-        GammaDashboard(const std::vector<std::string> &labels);
-        GammaDashboard(const std::vector<std::string> &labels, int temp);
+        enum class DoseDisplayMode
+        {
+            RealTime,
+            Accumulated
+        };
 
     public:
-        bool m_isAccumulatedDose; // 新增：标识是否为累计剂量界面
+        GammaDashboard() = default;
+        GammaDashboard(const std::vector<std::string> &labels, DoseDisplayMode mode);
 
     public:
         void init(astra::Menu::ExitDirection _direction) override;
@@ -125,6 +144,10 @@ namespace yomu
     private:
         std::vector<std::string> m_labels;
         size_t m_displayLines;
+        DoseDisplayMode m_displayMode;
+
+    private:
+        std::string adjustDoseAndUnit(const float &dose) const;
     };
 
     class PDXDashboard : public astra::Page

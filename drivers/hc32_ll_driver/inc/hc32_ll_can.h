@@ -149,54 +149,54 @@ typedef struct {
 } stc_can_error_info_t;
 
 /**
- * @brief CAN TX frame data structure.
+ * @brief CAN 发送帧数据结构
  */
 typedef struct {
-    uint32_t u32ID;                         /*!< 11 bits standard ID or 29 bits extended ID, depending on IDE. */
+    uint32_t u32ID;                         /*!< 11位标准ID或29位扩展ID，取决于IDE */
     union {
         uint32_t u32Ctrl;
         struct {
-            uint32_t DLC: 4;                /*!< Data length code. Length of the data segment of data frame.
-                                                 It should be zero while the frame is remote frame.
-                                                 This parameter can be a value of @ref CAN_Data_Length_Code */
-            uint32_t BRS: 1;                /*!< Bit rate switch. */
-            uint32_t FDF: 1;                /*!< CAN FD frame. */
-            uint32_t RTR: 1;                /*!< Remote transmission request bit.
-                                                 It is used to distinguish between data frames and remote frames. */
-            uint32_t IDE: 1;                /*!< Identifier extension flag.
-                                                 It is used to distinguish between standard format and extended format.
-                                                 This parameter can be a 1 or 0. */
-            uint32_t RSVD: 24;              /*!< Reserved bits. */
+            uint32_t DLC: 4;                /*!< 数据长度代码。数据帧数据段的长度。
+                                                 如果是远程帧，该值应为零。
+                                                 此参数可以是 @ref CAN_Data_Length_Code 中的一个值 */
+            uint32_t BRS: 1;                /*!< 位速率切换 */
+            uint32_t FDF: 1;                /*!< CAN FD帧 */
+            uint32_t RTR: 1;                /*!< 远程传输请求位。
+                                                 用于区分数据帧和远程帧 */
+            uint32_t IDE: 1;                /*!< 标识符扩展标志。
+                                                 用于区分标准格式和扩展格式。
+                                                 此参数可以是1或0 */
+            uint32_t RSVD: 24;              /*!< 保留位 */
         };
     };
-    uint8_t au8Data[8U];                    /*!< TX data payload. */
+    uint8_t au8Data[8U];                    /*!< 发送数据负载 */
 } stc_can_tx_frame_t;
 
 /**
- * @brief CAN RX frame data structure.
+ * @brief CAN 接收帧数据结构
  */
 typedef struct {
-    uint32_t u32ID;                         /*!< 11 bits standard ID or 29 bits extended ID, depending on IDE. */
+    uint32_t u32ID;                         /*!< 11位标准ID或29位扩展ID，取决于IDE */
     union {
         uint32_t u32Ctrl;
         struct {
-            uint32_t DLC: 4;                /*!< Data length code. Length of the data segment of data frame.
-                                                 It should be zero while the frame is remote frame.
-                                                 This parameter can be a value of @ref CAN_Data_Length_Code */
-            uint32_t BRS: 1;                /*!< Bit rate switch. */
-            uint32_t FDF: 1;                /*!< CAN FD frame. */
-            uint32_t RTR: 1;                /*!< Remote transmission request bit.
-                                                 It is used to distinguish between data frames and remote frames. */
-            uint32_t IDE: 1;                /*!< Identifier extension flag.
-                                                 It is used to distinguish between standard format and extended format.
-                                                 This parameter can be 1 or 0. */
-            uint32_t RSVD: 4;               /*!< Reserved bits. */
-            uint32_t TX: 1;                 /*!< This bit is set to 1 when receiving self-transmitted data in loopback mode. */
-            uint32_t ERRT: 3;               /*!< Error type. */
-            uint32_t CYCLE_TIME: 16;        /*!< Cycle time of time-triggered communication(TTC). */
+            uint32_t DLC: 4;                /*!< 数据长度代码。数据帧数据段的长度。
+                                                 如果是远程帧，该值应为零。
+                                                 此参数可以是 @ref CAN_Data_Length_Code 中的一个值 */
+            uint32_t BRS: 1;                /*!< 位速率切换 */
+            uint32_t FDF: 1;                /*!< CAN FD帧 */
+            uint32_t RTR: 1;                /*!< 远程传输请求位。
+                                                 用于区分数据帧和远程帧 */
+            uint32_t IDE: 1;                /*!< 标识符扩展标志。
+                                                 用于区分标准格式和扩展格式。
+                                                 此参数可以是1或0 */
+            uint32_t RSVD: 4;               /*!< 保留位 */
+            uint32_t TX: 1;                 /*!< 在回环模式下接收自发数据时，此位设置为1 */
+            uint32_t ERRT: 3;               /*!< 错误类型 */
+            uint32_t CYCLE_TIME: 16;        /*!< 时间触发通信(TTC)的周期时间 */
         };
     };
-    uint8_t au8Data[8U];                    /*!< RX data payload. */
+    uint8_t au8Data[8U];                    /*!< 接收数据负载 */
 } stc_can_rx_frame_t;
 
 /**

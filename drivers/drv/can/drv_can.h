@@ -17,21 +17,21 @@ extern "C"
 #define CAN_RX_DATA_TYPE_CLEAR_CUMULATIVE_DOSE_SUCCESS          (0x00)  // 接收数据:累计剂量清零成功
 #define CAN_RX_DATA_TYPE_CLEAR_CUMULATIVE_DOSE_FAIL             (0x01)  // 接收数据:累计剂量清零失败
 
-#define CAN_TX_BASE_DATA                        (0xA1)  // 本底数据帧头
-#define CAN_TX_SELF_POLLUTION_DATA              (0xA2)  // 自污染检测数据帧头
-#define CAN_TX_PERSON_DETECTION_DATA            (0xA3)  // 人员检测数据帧头
-#define CAN_TX_NORMAL_DATA                      (0xA4)  // 正常数据帧头
+#define CAN_TX_BASE_DATA                                        (0xA1)  // 本底数据帧头
+#define CAN_TX_SELF_POLLUTION_DATA                              (0xA2)  // 自污染检测数据帧头
+#define CAN_TX_PERSON_DETECTION_DATA                            (0xA3)  // 人员检测数据帧头
+#define CAN_TX_NORMAL_DATA                                      (0xA4)  // 正常数据帧头
 
 
 /******************************函数定义*******************************/
 void CAN_IrqCallback(void);
 void CAN_ProcessReceivedData(void);
 void ProcessCANFrame(stc_can_rx_frame_t Rx_Data);
-void CAN_SendSelfCheckCommand(uint32_t u32ID);
-void CAN_SendClearCumulativeDoseCommand(uint32_t u32ID);
-void CAN_SendDoseRateAlarmThresholdCommand(uint32_t u32ID, float f32DoseRateAlarmThreshold);
-void CAN_SendUploadDoseRateAlarmThresholdCommand(uint32_t u32ID);
-void CAN_SendUploadDoseRateAndCumulativeDoseCommand(uint32_t u32ID);
+void CAN_SendSelfCheckCommand(uint8_t u8ProbeID);
+void CAN_SendClearCumulativeDoseCommand(uint8_t u8ProbeID);
+void CAN_SendDoseRateAlarmThresholdCommand(uint8_t u8ProbeID, float f32DoseRateAlarmThreshold);
+void CAN_SendUploadDoseRateAlarmThresholdCommand(uint8_t u8ProbeID);
+void CAN_SendUploadDoseRateAndCumulativeDoseCommand(uint8_t u8ProbeID);
 
 #ifdef __cplusplus
 }

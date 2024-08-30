@@ -5,29 +5,13 @@
 #include "../../hal_dreamCore.h"
 #include <cmath>
 
-void HALDreamCore::_ssd1325_transmit_cmd(unsigned char _cmd)
-{ // NOLINT
-  SPI_DC_CMD();
-
-  SPI_Trans(SPI_UNIT, &_cmd, 1, 1000);
-}
-
-void HALDreamCore::_ssd1325_transmit_data(unsigned char _data, unsigned char _mode)
-{ // NOLINT
-  if (!_mode)
-    _data = ~_data;
-  SPI_DC_DATA();
-
-  SPI_Trans(SPI_UNIT, &_data, 1, 1000);
-}
-
 /**
  * @brief 复位SSD1306 OLED显示器
  *
  * @param _state 复位状态
  * @return void
  */
-void HALDreamCore::_ssd1325_reset(bool _state)
+void HALDreamCore::_st7567_reset(bool _state)
 {
   if (_state)
     SPI_RST_SET();
@@ -36,53 +20,7 @@ void HALDreamCore::_ssd1325_reset(bool _state)
 }
 
 /**
- * @brief 设置SSD1306 OLED显示器的光标
- *
- * @param _x x坐标
- * @param _y y坐标
- * @return void
- */
-void HALDreamCore::_ssd1325_set_cursor(uint8_t a, uint8_t b, uint8_t c, uint8_t d)
-{
-  _ssd1325_transmit_cmd(0xFE);
-  _ssd1325_transmit_cmd(0x15);
-  _ssd1325_transmit_cmd(a);
-  _ssd1325_transmit_cmd(b);
-
-  _ssd1325_transmit_cmd(0xFE);
-  _ssd1325_transmit_cmd(0x75);
-  _ssd1325_transmit_cmd(0x0c + c);
-  _ssd1325_transmit_cmd(0x0c + d);
-}
-
-/**
- * @brief 填充SSD1306 OLED显示器
- *
- * @param _data 数据
- * @return void
- */
-void HALDreamCore::_ssd1325_fill(unsigned char _data)
-{
-  unsigned char i, j;
-
-  _ssd1325_set_cursor(0, 63, 0, 63);
-
-  for (j = 0; j < 64; j++)
-  {
-    for (i = 0; i < 64; i++)
-    {
-      _ssd1325_transmit_data(_data, 1);
-    }
-  }
-}
-
-/**
  * @brief 点亮屏幕
- *
- * 0X8D - 电荷泵使能
- * 0X14 - 开启电荷泵
- * 0XAF - 点亮屏幕
- *
  * @param none
  * @param none
  */
@@ -93,90 +31,12 @@ void HALDreamCore::_screenOn()
 
 /**
  * @brief 关闭屏幕
- *
- * 0X8D - 电荷泵使能
- * 0X10 - 关闭电荷泵
- * 0XAE - 关闭屏幕
- *
  * @param none
  * @param none
  */
 void HALDreamCore::_screenOff()
 {
   u8g2_SetPowerSave(&canvasBuffer, 1);
-}
-
-void HALDreamCore::_ssd1325_init()
-{
-  _ssd1325_reset(RESET);
-  vTaskDelay(50 / portTICK_PERIOD_MS);
-  _ssd1325_reset(SET);
-
-  // ----------------------------------------------
-
-  _ssd1325_transmit_cmd(0xAE); //--turn off oled panel
-  _ssd1325_transmit_cmd(0x81); //--Set Contrast Current:40H
-  _ssd1325_transmit_cmd(0x40);
-  _ssd1325_transmit_cmd(0x86); //--Set Current Range:1/4 Current
-  _ssd1325_transmit_cmd(0xA0); // Set Re-map
-  _ssd1325_transmit_cmd(0x52);
-  _ssd1325_transmit_cmd(0xA1); // Set Display Star Line
-  _ssd1325_transmit_cmd(0x0C);
-  _ssd1325_transmit_cmd(0xA2); // Set Display Offset
-  _ssd1325_transmit_cmd(0x4C);
-  _ssd1325_transmit_cmd(0xA4); // Set Display Mode:Normal
-  _ssd1325_transmit_cmd(0xa8); // Set Multiplex Ratio:64 MUX
-  _ssd1325_transmit_cmd(0x3f);
-  _ssd1325_transmit_cmd(0xad); // Set Master Configuration:External VCC
-  _ssd1325_transmit_cmd(0x02);
-  _ssd1325_transmit_cmd(0xb0); // Set Pre-charge Compensation Enable
-  _ssd1325_transmit_cmd(0x08);
-  _ssd1325_transmit_cmd(0xb4); // Set Pre-charge Compensation Level
-  _ssd1325_transmit_cmd(0x00);
-  _ssd1325_transmit_cmd(0xbc); // Set Pre-charge Voltage:0.51*VREF
-  _ssd1325_transmit_cmd(0x00);
-
-  _ssd1325_transmit_cmd(0xb1); // Set Phase Length
-  _ssd1325_transmit_cmd(0x04); // 4
-  _ssd1325_transmit_cmd(0x60); // 6
-  _ssd1325_transmit_cmd(0xb2); // Set Row Period:70
-  _ssd1325_transmit_cmd(0x46);
-  _ssd1325_transmit_cmd(0xb3); // Set Display Clock Divide Ratio/Oscillator Freguency
-  _ssd1325_transmit_cmd(0x01);
-  _ssd1325_transmit_cmd(0x40);
-
-  _ssd1325_transmit_cmd(0xb8); // Set Gray Scale Table
-  _ssd1325_transmit_cmd(0x01); // GS1
-  _ssd1325_transmit_cmd(0x01); // GS2
-  _ssd1325_transmit_cmd(0x10); // GS3
-  _ssd1325_transmit_cmd(0x01); // GS4
-  _ssd1325_transmit_cmd(0x10); // GS5
-  _ssd1325_transmit_cmd(0x01); // GS6
-  _ssd1325_transmit_cmd(0x10); // GS7
-  _ssd1325_transmit_cmd(0x01); // GS8
-  _ssd1325_transmit_cmd(0x10); // GS9
-  _ssd1325_transmit_cmd(0x01); // GS10
-  _ssd1325_transmit_cmd(0x10); // GS11
-  _ssd1325_transmit_cmd(0x01); // GS12
-  _ssd1325_transmit_cmd(0x10); // GS13
-  _ssd1325_transmit_cmd(0x01); // GS14
-  _ssd1325_transmit_cmd(0x10); // GS15
-
-  _ssd1325_transmit_cmd(0xbe); // Set VCOMH Voltage:0.51*VREF
-  _ssd1325_transmit_cmd(0x00);
-  _ssd1325_transmit_cmd(0xbf); // Set Segment Low Voltage:connect a capacitor
-  _ssd1325_transmit_cmd(0x0e);
-
-  _ssd1325_transmit_cmd(0x23); // Set Graghic Acceleration Commond Option
-  _ssd1325_transmit_cmd(0x00);
-  _ssd1325_transmit_cmd(0xaf); // Display ON
-
-  _ssd1325_fill(0x00);
-
-  /* 使能 DMA 和 通道 ，并且关闭 spi （方便后面用dma）*/
-  SPI_Cmd(SPI_UNIT, DISABLE);
-  DMA_Cmd(DMA_UNIT, ENABLE);
-  DMA_ChCmd(DMA_UNIT, DMA_TX_CH, ENABLE);
 }
 
 unsigned char HALDreamCore::_u8x8_byte_hw_spi_callback(u8x8_t *_u8x8, unsigned char _msg, unsigned char _argInt, void *_argPtr)
@@ -194,15 +54,7 @@ unsigned char HALDreamCore::_u8x8_byte_hw_spi_callback(u8x8_t *_u8x8, unsigned c
     break;
   case U8X8_MSG_BYTE_SET_DC: /*设置DC引脚,表明发送的是数据还是命令*/
   {
-    en_functional_state_t state = (_argInt != 0) ? ENABLE : DISABLE;
-    if (state)
-    {
-      SPI_DC_DATA();
-    }
-    else
-    {
-      SPI_DC_CMD();
-    }
+    (_argInt != 0) ? SPI_DC_DATA() : SPI_DC_CMD();
     break;
   }
   case U8X8_MSG_BYTE_START_TRANSFER:
@@ -232,7 +84,7 @@ unsigned char HALDreamCore::_u8x8_gpio_and_delay_callback(__attribute__((unused)
   case U8X8_MSG_GPIO_DC:
     break;
   case U8X8_MSG_GPIO_RESET:
-    _ssd1325_reset(_argInt);
+    _st7567_reset(_argInt);
     break;
   default:
     break;
@@ -242,19 +94,19 @@ unsigned char HALDreamCore::_u8x8_gpio_and_delay_callback(__attribute__((unused)
 
 void HALDreamCore::_u8g2_init()
 {
-  u8g2_Setup_ssd1325_nhd_128x64_f(&canvasBuffer,
-                                  U8G2_R0, // 默认方向，不旋转
-                                  _u8x8_byte_hw_spi_callback,
-                                  _u8x8_gpio_and_delay_callback);
+  u8g2_Setup_st7567_pi_132x64_f(&canvasBuffer,
+                                U8G2_R2, // 旋转180度
+                                _u8x8_byte_hw_spi_callback,
+                                _u8x8_gpio_and_delay_callback);
   u8g2_InitDisplay(&canvasBuffer);     // 根据所选的芯片进行初始化工作，初始化完成后，显示器处于关闭状态
   u8g2_SetPowerSave(&canvasBuffer, 0); // 打开显示器
   u8g2_ClearBuffer(&canvasBuffer);
 
-  // delay(100);
+  u8g2_SetFontMode(&canvasBuffer, 1);           /*字体模式选择*/
+  u8g2_SetFontDirection(&canvasBuffer, 0);      /*字体方向选择*/
+  u8g2_SetFont(&canvasBuffer, u8g2_my_font_16); /*字库选择*/
 
-  u8g2_SetFontMode(&canvasBuffer, 1);            /*字体模式选择*/
-  u8g2_SetFontDirection(&canvasBuffer, 0);       /*字体方向选择*/
-  u8g2_SetFont(&canvasBuffer, u8g2_font_myfont); /*字库选择*/
+  vTaskDelay(100 / portTICK_PERIOD_MS);
 }
 
 void *HALDreamCore::_getCanvasBuffer()
@@ -313,6 +165,11 @@ void HALDreamCore::_drawPixel(float _x, float _y)
 void HALDreamCore::_drawEnglish(float _x, float _y, const std::string &_text)
 {
   u8g2_DrawStr(&canvasBuffer, (int16_t)std::round(_x), (int16_t)std::round(_y), _text.c_str());
+}
+
+void HALDreamCore::_drawEnglish_str(float _x, float _y, const char *str)
+{
+  u8g2_DrawStr(&canvasBuffer, _x, _y, str);
 }
 
 void HALDreamCore::_drawChinese(float _x, float _y, const std::string &_text)

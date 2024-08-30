@@ -77,6 +77,18 @@ namespace astra
       }
       return this->parent->findTileAncestor();
     }
+    virtual Menu *findListAncestor()
+    {
+      if (this->getType() == "List")
+      {
+        return this;
+      }
+      if (this->parent == nullptr)
+      {
+        return nullptr;
+      }
+      return this->parent->findListAncestor();
+    }
 
   public:
     std::string title;
@@ -90,6 +102,8 @@ namespace astra
     // 环形界面的前一个界面和后一个界面
     Menu *preview{};
     Menu *next{};
+    [[nodiscard]] Menu *getNextMenu() const; // 启动器调用该方法来获取下一个页面(环形界面)
+    [[nodiscard]] Menu *getPreview() const;  // 启动器调用该方法来获取上一个页面(环形界面)
 
     // 树形界面的父子关系和插件和选择菜单项
     Menu *parent{};
@@ -98,8 +112,8 @@ namespace astra
     unsigned char selectIndex{};
 
     [[nodiscard]] unsigned char getItemNum() const;
-    [[nodiscard]] Menu *getNextMenu() const; // 启动器调用该方法来获取下一个页面
-    [[nodiscard]] Menu *getPreview() const;
+    [[nodiscard]] Menu *getchildMenu() const;  // 启动器调用该方法来获取下一个页面(树形界面)
+    [[nodiscard]] Menu *getParentMenu() const; // 启动器调用该方法来获取上一个页面(树形界面)
 
   public:
     bool initFlag = false;
@@ -235,10 +249,11 @@ namespace astra
     {
       bool isConfirmed;
       float value;
-      int probeId;
+      std::string probeId_text;
 
-      ConfirmResult(bool confirmed = false, float val = 0.0f, int id = -1)
-          : isConfirmed(confirmed), value(val), probeId(id) {}
+      // 结构体的构造函数
+      ConfirmResult(bool confirmed = false, float val = 0.0f, std::string id_text = "")
+          : isConfirmed(confirmed), value(val), probeId_text(id_text) {}
     };
 
   public: // 处理用户输入
@@ -247,7 +262,7 @@ namespace astra
     virtual void onUp() {};
     virtual void onDown() {};
     virtual std::pair<bool, bool> onConfirm() { return {false, false}; }
-    virtual ConfirmResult onConfirm(int _index) { return {false, 0.0f, -1};}
+    virtual ConfirmResult onConfirm(int _index) { return {false, 0.0f, ""}; }
     virtual ExitDirection shouldExit() const { return ExitDirection::None; }
 
   public:
@@ -260,6 +275,29 @@ namespace astra
         else
           pos += (target - pos) / ((100 - astra::getUIConfig().numberEditorCharAnimationSpeed) / 1.0f);
       }
+    }
+
+  public:
+    static std::string formatFloatToString(const float &value)
+    {
+      float scaledValue = value;
+
+      if (value >= 1000000)
+      {
+        scaledValue = value / 1000000;
+      }
+      else if (value >= 1000)
+      {
+        scaledValue = value / 1000;
+      }
+      else
+      {
+        scaledValue = value;
+      }
+
+      char buffer[20];
+      formatFloat(scaledValue, buffer, sizeof(buffer));
+      return std::string(buffer);
     }
 
   public:

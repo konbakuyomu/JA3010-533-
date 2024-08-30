@@ -526,7 +526,7 @@ void TMRA_IntCmd(CM_TMRA_TypeDef *TMRAx, uint32_t u32IntType, en_functional_stat
 void TMRA_EventCmd(CM_TMRA_TypeDef *TMRAx, uint32_t u32EventType, en_functional_state_t enNewState);
 void TMRA_Start(CM_TMRA_TypeDef *TMRAx);
 void TMRA_Stop(CM_TMRA_TypeDef *TMRAx);
-
+void TMRA_Update_PWM_DutyCycle(CM_TMRA_TypeDef *TMRAx, uint32_t u32Ch, float fDutyCycle);
 /**
  * @}
  */

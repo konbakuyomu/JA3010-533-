@@ -9,13 +9,9 @@
 #include "u8g2.h"
 
 class HALDreamCore : public HAL
-{	
+{
 private:
-  void _hc32_hal_init();
-
-  void _ssd1325_init();
-  void _key_init();
-  void _buzzer_init();
+  void _RTOS_Init();
   void _u8g2_init();
 
 public:
@@ -30,28 +26,20 @@ protected:
   u8g2_t canvasBuffer{};
   static unsigned char _u8x8_byte_hw_spi_callback(u8x8_t *_u8x8, unsigned char _msg, unsigned char _argInt, void *_argPtr);
 
-  static unsigned char _u8x8_gpio_and_delay_callback(U8X8_UNUSED u8x8_t *_u8x8,
-                                                     U8X8_UNUSED unsigned char _msg,
-                                                     U8X8_UNUSED unsigned char _argInt,
-                                                     U8X8_UNUSED void *_argPtr);
+  static unsigned char _u8x8_gpio_and_delay_callback(__attribute__((unused)) u8x8_t *_u8x8,
+                                                     __attribute__((unused)) unsigned char _msg,
+                                                     __attribute__((unused)) unsigned char _argInt,
+                                                     __attribute__((unused)) void *_argPtr);
 
 public:
   inline void init() override
   {
-    _hc32_hal_init();
-
-    // _ssd1325_init(); // u8g2 初始化中已经初始化了，不需要再手动初始化
-    _key_init();
-    _buzzer_init();
+    _RTOS_Init();
     _u8g2_init();
   }
 
 protected:
-  void _ssd1325_transmit_cmd(unsigned char _cmd);
-  void _ssd1325_transmit_data(unsigned char _data, unsigned char _mode);
-  static void _ssd1325_reset(bool _state);
-  void _ssd1325_set_cursor(uint8_t a, uint8_t b, uint8_t c, uint8_t d);
-  void _ssd1325_fill(unsigned char _data);
+  static void _st7567_reset(bool _state);
 
 public:
   void _screenOn() override;
@@ -69,6 +57,7 @@ public:
   void _setDrawType(unsigned char _type) override;
   void _drawPixel(float _x, float _y) override;
   void _drawEnglish(float _x, float _y, const std::string &_text) override;
+  void _drawEnglish_str(float _x, float _y, const char *str) override;
   void _drawChinese(float _x, float _y, const std::string &_text) override;
   void _drawVDottedLine(float _x, float _y, float _h) override;
   void _drawHDottedLine(float _x, float _y, float _l) override;
@@ -87,12 +76,8 @@ public:
   unsigned long _getRandomSeed() override;
 
 public:
-  void _beep(float _freq) override;
+  void _beepStart() override;
   void _beepStop() override;
-  void _setBeepVol(unsigned char _vol) override;
-
-public:
-  bool _getKey(key::KEY_INDEX _keyIndex) override;
 
 public:
   void _updateConfig() override;
