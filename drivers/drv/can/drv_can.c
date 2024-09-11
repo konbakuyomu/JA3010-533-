@@ -1,6 +1,28 @@
 #include "variable.h"
 
-/******************************函数定义*******************************/
+/* 变量声明 ----------------------------------------------------------------*/
+static stc_can_rx_frame_t *m_astRxFrame = NULL;
+
+/* 函数声明 ----------------------------------------------------------------*/
+
+/**
+ * @brief  初始化CAN接收缓冲区
+ * @param  无
+ * @retval 0: 成功, -1: 失败
+ */
+static int CAN_InitReceiveBuffer(void)
+{
+	if (m_astRxFrame == NULL)
+	{
+		m_astRxFrame = (stc_can_rx_frame_t *)mymalloc(sizeof(stc_can_rx_frame_t) * CAN_RX_FRAME_NUM);
+		if (m_astRxFrame == NULL)
+		{
+			// 内存分配失败，处理错误
+			return -1;
+		}
+	}
+	return 0;
+}
 
 /**
  * @brief  CAN中断处理函数
@@ -40,7 +62,19 @@ void CAN_ProcessReceivedData(void)
 {
 	uint8_t u8RxFrameNum = 0U;
 	int32_t i32Ret;
-	static stc_can_rx_frame_t m_astRxFrame[CAN_RX_FRAME_NUM];
+
+	// 确保缓冲区已初始化
+	if (m_astRxFrame == NULL)
+	{
+		if (CAN_InitReceiveBuffer() != 0)
+		{
+			// 初始化失败，处理错误
+			return;
+		}
+	}
+
+	// 清空接收缓冲区
+	memset(m_astRxFrame, 0, sizeof(stc_can_rx_frame_t) * CAN_RX_FRAME_NUM);
 
 	/* 从接收缓冲区获取接收到的数据帧，如果接收缓冲区有数据，就一直获取 */
 	do
@@ -152,41 +186,36 @@ void ProcessCANFrame(stc_can_rx_frame_t Rx_Data)
 		UpdateMessage.cumulativeDose = cumulativeDose_unit.buff;
 		UpdateMessage.probeNumber = probeNumber;
 
-		char *labels[] = {"前方", "后方", "左方", "右方"};
-		uint32_t probe_index = probeNumber - CAN_PROBE1_ID;
+		char *labels[] = {"探头1", "探头2", "探头3", "探头4"};
+		uint32_t realtime_threshold;
+		uint32_t cumulative_threshold;
 
-		if (probe_index < 4)
+		switch (probeNumber)
 		{
-			uint32_t realtime_threshold;
-			uint32_t cumulative_threshold;
-
-			switch (probe_index)
-			{
-			case 0:
-				realtime_threshold = data.probe1_realtime_alarm_threshold;
-				cumulative_threshold = data.probe1_cumulative_alarm_threshold;
-				break;
-			case 1:
-				realtime_threshold = data.probe2_realtime_alarm_threshold;
-				cumulative_threshold = data.probe2_cumulative_alarm_threshold;
-				break;
-			case 2:
-				realtime_threshold = data.probe3_realtime_alarm_threshold;
-				cumulative_threshold = data.probe3_cumulative_alarm_threshold;
-				break;
-			case 3:
-				realtime_threshold = data.probe4_realtime_alarm_threshold;
-				cumulative_threshold = data.probe4_cumulative_alarm_threshold;
-				break;
-			}
-
-			UpdateMessage.p = (UpdateMessage.doseRate > realtime_threshold);
-			UpdateMessage.d = (UpdateMessage.cumulativeDose > cumulative_threshold);
-
-			UpdateMessage.label = labels[probe_index];
-
-			xQueueSend(xQueue_ProbeInfoTransfer, &UpdateMessage, 0);
+		case CAN_PROBE1_ID:
+			realtime_threshold = data.probe1_realtime_alarm_threshold;
+			cumulative_threshold = data.probe1_cumulative_alarm_threshold;
+			break;
+		case CAN_PROBE2_ID:
+			realtime_threshold = data.probe2_realtime_alarm_threshold;
+			cumulative_threshold = data.probe2_cumulative_alarm_threshold;
+			break;
+		case CAN_PROBE3_ID:
+			realtime_threshold = data.probe3_realtime_alarm_threshold;
+			cumulative_threshold = data.probe3_cumulative_alarm_threshold;
+			break;
+		case CAN_PROBE4_ID:
+			realtime_threshold = data.probe4_realtime_alarm_threshold;
+			cumulative_threshold = data.probe4_cumulative_alarm_threshold;
+			break;
 		}
+
+		UpdateMessage.p = (UpdateMessage.doseRate > realtime_threshold);
+		UpdateMessage.d = (UpdateMessage.cumulativeDose > cumulative_threshold);
+
+		UpdateMessage.label = labels[probeNumber - CAN_PROBE1_ID];
+
+		xQueueSend(xQueue_ProbeInfoTransfer, &UpdateMessage, 0);
 
 		break;
 	}

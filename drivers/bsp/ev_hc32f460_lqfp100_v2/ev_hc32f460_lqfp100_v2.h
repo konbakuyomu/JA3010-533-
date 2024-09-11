@@ -142,9 +142,9 @@ extern "C"
  * @{
  */
 #define BSP_LED_RED_PORT        (GPIO_PORT_D)
-#define BSP_LED_RED_PIN         (GPIO_PIN_03)
+#define BSP_LED_RED_PIN         (GPIO_PIN_13)
 #define BSP_LED_GREEN_PORT      (GPIO_PORT_D)
-#define BSP_LED_GREEN_PIN       (GPIO_PIN_04)
+#define BSP_LED_GREEN_PIN       (GPIO_PIN_14)
 #define BSP_LED_YELLOW_PORT     (GPIO_PORT_D)
 #define BSP_LED_YELLOW_PIN      (GPIO_PIN_05)
 #define BSP_LED_BLUE_PORT       (GPIO_PORT_D)

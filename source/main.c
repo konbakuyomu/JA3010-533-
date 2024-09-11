@@ -51,6 +51,7 @@ void BSP_Init(void)
   BSP_XTAL32_Init();
   /*  (测试)LED初始化 */
   BSP_LED_Init();
+  BSP_LED_On(LED_GREEN);
   /* USART初始化 */
   USART_Config();
   /* EEPROM初始化 */
@@ -64,7 +65,7 @@ void BSP_Init(void)
   // data.probe2_cumulative_dose = 0;
   // data.probe3_cumulative_dose = 0;
   // data.probe4_cumulative_dose = 0;
-  // data.probe1_cumulative_alarm_threshold = 100000;
+  // data.probe1_cumulative_alarm_threshold = 100;
   // data.probe2_cumulative_alarm_threshold = 10;
   // data.probe3_cumulative_alarm_threshold = 10;
   // data.probe4_cumulative_alarm_threshold = 10;
@@ -224,6 +225,7 @@ static void AppTaskCreate(void *pvParameters)
   xProbe2AlarmTimer = xTimerCreate("Probe2AlarmTimer", pdMS_TO_TICKS(5000), pdTRUE, (void *)0, vProbe2AlarmTimerCallback);
   xProbe3AlarmTimer = xTimerCreate("Probe3AlarmTimer", pdMS_TO_TICKS(5000), pdTRUE, (void *)0, vProbe3AlarmTimerCallback);
   xProbe4AlarmTimer = xTimerCreate("Probe4AlarmTimer", pdMS_TO_TICKS(5000), pdTRUE, (void *)0, vProbe4AlarmTimerCallback);
+  xPopInfoTimer = xTimerCreate("PopInfoTimer", pdMS_TO_TICKS(1000), pdTRUE, (void *)0, vPopInfoTimerCallback);
   //-------------------------结束创建----------------------------------
 
   vTaskDelete(AppTaskCreate_Handle); // 删除AppTaskCreate任务
@@ -239,9 +241,11 @@ static void AppTaskCreate(void *pvParameters)
 static void UsartTask(void *pvParameters)
 {
   uint32_t u32ReceiveLen = 0;
-  uint8_t *pUsartBuffer = (uint8_t *)mymalloc(APP_FRAME_LEN_MAX);
+  uint8_t *pUsartBuffer = NULL;
+  init_dynamic_buffer(&m_au8RxBuf, APP_FRAME_LEN_MAX);   // 初始化动态缓冲区
+  init_dynamic_buffer(&pUsartBuffer, APP_FRAME_LEN_MAX); // 初始化临时缓冲区
 
-  if (pUsartBuffer == NULL)
+  if (pUsartBuffer == NULL || m_au8RxBuf == NULL)
   {
     // 内存分配失败，处理错误
     for (;;)
@@ -256,7 +260,7 @@ static void UsartTask(void *pvParameters)
     {
       memcpy(pUsartBuffer, m_au8RxBuf, u32ReceiveLen);
       key_value_msg("UART_sendData", pUsartBuffer, u32ReceiveLen);
-      memset(m_au8RxBuf, 0, sizeof(m_au8RxBuf));
+      memset(m_au8RxBuf, 0, APP_FRAME_LEN_MAX);
     }
   }
 

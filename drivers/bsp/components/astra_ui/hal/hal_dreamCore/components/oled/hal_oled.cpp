@@ -95,7 +95,7 @@ unsigned char HALDreamCore::_u8x8_gpio_and_delay_callback(__attribute__((unused)
 void HALDreamCore::_u8g2_init()
 {
   u8g2_Setup_st7567_pi_132x64_f(&canvasBuffer,
-                                U8G2_R2, // 旋转180度
+                                U8G2_R0, // 不旋转
                                 _u8x8_byte_hw_spi_callback,
                                 _u8x8_gpio_and_delay_callback);
   u8g2_InitDisplay(&canvasBuffer);     // 根据所选的芯片进行初始化工作，初始化完成后，显示器处于关闭状态

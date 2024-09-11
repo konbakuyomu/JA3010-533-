@@ -36,6 +36,7 @@ struct _m_mallco_dev mallco_dev =
 
 /**
  * @brief       复制内存
+ * @note        逐字节地将源内存的内容复制到目标内存
  * @param       *des : 目的地址
  * @param       *src : 源地址
  * @param       n    : 需要复制的内存长度(字节为单位)
@@ -75,7 +76,7 @@ void my_mem_init(void)
         xMallocMutex = xSemaphoreCreateMutex();
     }
 
-    my_mem_set(mallco_dev.memmap, 0, memtblsize * 2); /* 内存状态表数据清零 */
+    my_mem_set(mallco_dev.memmap, 0, memtblsize * 2); /* 内存状态表数据清零，这里memtblsize * 2是因为MT_TYPE是uint16_t类型，所以需要乘以2 */
     mallco_dev.membase = (uint8_t *)SRAM_BASE;        /* 设置内存池起始地址 */
     mallco_dev.memrdy = 1;                            /* 内存管理初始化OK */
 }
@@ -83,6 +84,7 @@ void my_mem_init(void)
 /**
  * @brief       获取内存使用率
  * @param       无
+ * @note        内存使用率 = 已使用内存 / 总内存 * 100%
  * @retval      使用率(0~100)
  */
 uint8_t my_mem_perused(void)
@@ -100,6 +102,7 @@ uint8_t my_mem_perused(void)
 /**
  * @brief       内存分配(内部调用)
  * @param       size : 要分配的内存大小(字节)
+ * @note        内存分配时，会从内存池的末尾开始查找，找到第一个满足条件的内存块，然后将其标记为已使用
  * @retval      内存偏移地址
  */
 static uint32_t my_mem_malloc(uint32_t size)
@@ -112,12 +115,12 @@ static uint32_t my_mem_malloc(uint32_t size)
     {
         mallco_dev.init(); /* 未初始化,先执行初始化 */
     }
-    if (size == 0)
-        return 0xFFFFFFFF;     /* 不需要分配 */
+    if (size == 0) /* 不需要分配 */
+        return 0xFFFFFFFF;
     nmemb = size / memblksize; /* 获取需要分配的连续内存块数 */
-    if (size % memblksize)
+    if (size % memblksize)     /* 如果size不是memblksize的整数倍，则需要分配的内存块数加1 */
         nmemb++;
-    for (offset = memtblsize - 1; offset >= 0; offset--)
+    for (offset = memtblsize - 1; offset >= 0; offset--) /* 从内存池的末尾开始查找 */
     {
         if (!mallco_dev.memmap[offset])
             cmemb++; /* 连续空内存块数增加 */
@@ -244,6 +247,11 @@ void *mymalloc(uint32_t size)
  * @param       *ptr : 旧内存首地址
  * @param       size : 要分配的内存大小(字节)
  * @retval      新分配到的内存首地址.
+ * @note        此函数通过检查系统状态来决定是否使用互斥锁，以避免潜在的死锁问题：
+ *              1. 处理系统初始化阶段：在FreeRTOS调度器未启动时，跳过互斥锁使用。
+ *              2. 处理中断上下文：在中断中不使用可能导致任务切换的FreeRTOS API。
+ *              3. 避免递归死锁：在系统初始化或中断中跳过互斥锁，防止潜在的递归死锁。
+ *              4. 正常运行时保护：在系统正常运行时使用互斥锁保护内存操作，确保线程安全。
  */
 void *myrealloc(void *ptr, uint32_t size)
 {

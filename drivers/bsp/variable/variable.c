@@ -5,8 +5,6 @@
 /* 创建任务句柄 */
 TaskHandle_t AppTaskCreate_Handle = NULL;
 TaskHandle_t AstraTask_Handle = NULL;
-TaskHandle_t LEDTask_Handle = NULL;
-TaskHandle_t BTNTask_Handle = NULL;
 TaskHandle_t CanTxTask_Handle = NULL;
 TaskHandle_t CanRxTask_Handle = NULL;
 TaskHandle_t UsartTask_Handle = NULL;
@@ -23,6 +21,7 @@ TimerHandle_t xProbe1AlarmTimer = NULL;
 TimerHandle_t xProbe2AlarmTimer = NULL;
 TimerHandle_t xProbe3AlarmTimer = NULL;
 TimerHandle_t xProbe4AlarmTimer = NULL;
+TimerHandle_t xPopInfoTimer = NULL;
 
 /*-------------------- EEPROM --------------------*/
 ProbeData data = {0};
@@ -30,7 +29,52 @@ ProbeData data = {0};
 /*-------------------- 标志位 --------------------*/
 bool g_bUsartInitialized = false; // 串口初始化完成标志位
 
+/*------------------- 探头状态 -------------------*/
+ProbeStatus Gloabal_ProbeStatus[2];
+
 /* 函数声明 ----------------------------------------------------------------*/
+/**
+ * @brief 修改软件定时器的触发时间
+ * @param xTimer 定时器句柄
+ * @param newPeriod 新的触发时间（单位：ticks）
+ * @retval pdPASS 成功，pdFAIL 失败
+ */
+BaseType_t modifyTimerPeriod(TimerHandle_t xTimer, TickType_t newPeriod)
+{
+    if (xTimer == NULL)
+    {
+        return pdFAIL;
+    }
+    return xTimerChangePeriod(xTimer, newPeriod, 0);
+}
+
+/**
+ * @brief 初始化动态缓冲区(串口)
+ * @param buffer 指向 uint8_t 指针的指针，用于存储分配的内存地址
+ * @param size 要分配的内存大小
+ * @return 成功时返回分配的内存地址，失败时返回 NULL
+ */
+uint8_t *init_dynamic_buffer(uint8_t **buffer, size_t size)
+{
+    if (buffer == NULL || size == 0)
+    {
+        return NULL;
+    }
+
+    *buffer = (uint8_t *)mymalloc(size);
+
+    if (*buffer != NULL)
+    {
+        memset(*buffer, 0, size);
+        return *buffer;
+    }
+    else
+    {
+        // 内存分配失败，可以在这里添加错误处理代码
+        // 例如：打印错误信息或触发系统重置
+        return NULL;
+    }
+}
 
 /**
  * @brief 将浮点数格式化为字符串，根据数值大小自动调整小数位数
@@ -236,7 +280,7 @@ void vProbe1AlarmTimerCallback(TimerHandle_t xTimer)
     if (!(xEventGroupGetBits(xProbeDataSendEventGroup) & PROBE1_ALARM_FLAG))
     {
         xEventGroupSetBits(xProbeDataSendEventGroup, PROBE1_POPUP_FLAG);
-        xTimerStop(xTimer, 0);  // 关闭自身软件定时器
+        xTimerStop(xTimer, 0); // 关闭自身软件定时器
     }
 }
 
@@ -251,7 +295,7 @@ void vProbe2AlarmTimerCallback(TimerHandle_t xTimer)
     if (!(xEventGroupGetBits(xProbeDataSendEventGroup) & PROBE2_ALARM_FLAG))
     {
         xEventGroupSetBits(xProbeDataSendEventGroup, PROBE2_POPUP_FLAG);
-        xTimerStop(xTimer, 0);  // 关闭自身软件定时器
+        xTimerStop(xTimer, 0); // 关闭自身软件定时器
     }
 }
 
@@ -266,7 +310,7 @@ void vProbe3AlarmTimerCallback(TimerHandle_t xTimer)
     if (!(xEventGroupGetBits(xProbeDataSendEventGroup) & PROBE3_ALARM_FLAG))
     {
         xEventGroupSetBits(xProbeDataSendEventGroup, PROBE3_POPUP_FLAG);
-        xTimerStop(xTimer, 0);  // 关闭自身软件定时器
+        xTimerStop(xTimer, 0); // 关闭自身软件定时器
     }
 }
 
@@ -281,7 +325,7 @@ void vProbe4AlarmTimerCallback(TimerHandle_t xTimer)
     if (!(xEventGroupGetBits(xProbeDataSendEventGroup) & PROBE4_ALARM_FLAG))
     {
         xEventGroupSetBits(xProbeDataSendEventGroup, PROBE4_POPUP_FLAG);
-        xTimerStop(xTimer, 0);  // 关闭自身软件定时器
+        xTimerStop(xTimer, 0); // 关闭自身软件定时器
     }
 }
 
@@ -293,6 +337,22 @@ void vProbe4AlarmTimerCallback(TimerHandle_t xTimer)
 void vBeepTimerCallback(TimerHandle_t xTimer)
 {
     BEEP_TOGGLE();
+    BSP_LED_Toggle(LED_RED);
+}
+
+/**
+ * @brief  popinfo 弹窗倒计时定时器回调函数
+ * @param  xTimer 定时器句柄
+ * @retval None
+ */
+void vPopInfoTimerCallback(TimerHandle_t xTimer)
+{
+    // 发送任务通知给 AstraTask_Handle
+    if (AstraTask_Handle != NULL)
+    {
+        xTaskNotifyGive(AstraTask_Handle);
+    }
+    xTimerStop(xTimer, 0); // 关闭自身软件定时器
 }
 
 /**
@@ -351,6 +411,8 @@ static void CAN_SendUploadDoseCommand_cb(void *value, size_t lenth)
 static void Beep_Start_cb(void *value, size_t lenth)
 {
     BEEP_OFF();
+    BSP_LED_Off(LED_RED);
+    BSP_LED_Off(LED_GREEN);
     xTimerStart(xBeepTimer, 0);
 }
 
@@ -364,6 +426,8 @@ static void Beep_Stop_cb(void *value, size_t lenth)
 {
     xTimerStop(xBeepTimer, 0);
     BEEP_OFF();
+    BSP_LED_Off(LED_RED);
+    BSP_LED_On(LED_GREEN);
 }
 
 /**
@@ -425,6 +489,4 @@ void Key_Value_Init(void)
     key_value_register(NULL, "Beep_Stop", Beep_Stop_cb);                              // 蜂鸣器停止
     key_value_register(NULL, "Probe1_Alarm_Start", Probe1_Alarm_Start_cb);            // 探头1报警开始
     key_value_register(NULL, "Probe2_Alarm_Start", Probe2_Alarm_Start_cb);            // 探头2报警开始
-    key_value_register(NULL, "Probe3_Alarm_Start", Probe3_Alarm_Start_cb);            // 探头3报警开始
-    key_value_register(NULL, "Probe4_Alarm_Start", Probe4_Alarm_Start_cb);            // 探头4报警开始
 }

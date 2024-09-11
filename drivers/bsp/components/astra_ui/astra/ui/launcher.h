@@ -28,8 +28,6 @@ namespace astra
     Selector *selector;
     Camera *camera;
 
-    uint64_t time;
-
   public:
     void popInfo(std::string _info, uint16_t _time);      // 带时间参数
     bool popInfo(std::string _info);                      // 不带时间参数

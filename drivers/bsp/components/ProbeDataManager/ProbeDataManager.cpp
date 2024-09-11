@@ -13,10 +13,8 @@ namespace yomu
 
     // 构造函数，初始化探头数据
     ProbeDataManager::ProbeDataManager()
-        : m_probeData{{{"前方", 0.0f, false, false},
-                       {"后方", 0.0f, false, false},
-                       {"左方", 0.0f, false, false},
-                       {"右方", 0.0f, false, false}}} {}
+        : m_probeData{{{"探头1", 0.0f, false, false},
+                       {"探头2", 0.0f, false, false}}} {}
 
     // 更新探头数据
     void ProbeDataManager::updateProbeData(const std::string &label, float doseRate, float cumulativeDose, bool p, bool d)
@@ -51,7 +49,7 @@ namespace yomu
     }
 
     // 获取所有探头数据的常量引用
-    const std::array<ProbeDataManager::ProbeData, 4> &ProbeDataManager::getProbeData() const
+    const std::array<ProbeDataManager::ProbeData, 2> &ProbeDataManager::getProbeData() const
     {
         return m_probeData;
     }

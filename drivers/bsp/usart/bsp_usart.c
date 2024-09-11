@@ -1,7 +1,7 @@
 #include "variable.h"
 
 /* 变量声明 ----------------------------------------------------------------*/
-uint8_t m_au8RxBuf[APP_FRAME_LEN_MAX] = {0};
+uint8_t *m_au8RxBuf = NULL;
 
 /* 函数声明 ----------------------------------------------------------------*/
 /**
@@ -110,7 +110,7 @@ static int32_t USART3_DMA_Config(void)
 	(void)DMA_StructInit(&stcDmaInit);						// DMA初始化结构体清零
 	stcDmaInit.u32IntEn = DMA_INT_ENABLE;					// 启动DMA中断
 	stcDmaInit.u32BlockSize = 1UL;							// 指定DMA的块大小，也就是一次DMA操作应当传输的数据块的大小。
-	stcDmaInit.u32TransCount = ARRAY_SZ(m_au8RxBuf);		// 得到数组长度
+	stcDmaInit.u32TransCount = APP_FRAME_LEN_MAX;		    // 得到数组长度，原来的写法是 ARRAY_SZ(m_au8RxBuf)
 	stcDmaInit.u32DataWidth = DMA_DATAWIDTH_8BIT;			// 这个字段指定DMA传输数据的宽度，也就是一次性传输的数据的位数（8，16，32）
 	stcDmaInit.u32DestAddr = (uint32_t)m_au8RxBuf;			// 指定DMA的目标地址
 	stcDmaInit.u32SrcAddr = ((uint32_t)(&USART_UNIT->RDR)); // 指定DMA的源地址，也就是DMA将从这个地址开始读取数据，由芯片手册可知接收数据寄存器是从16位开始的，所以是RDR寄存器

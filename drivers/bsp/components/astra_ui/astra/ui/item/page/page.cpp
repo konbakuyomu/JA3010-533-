@@ -660,7 +660,7 @@ namespace yomu
         }
 
         // 计算总宽度和起始 X 坐标
-        totalWidth = labelWidth + valueWidth + unitWidth + 30; // 20 为间隔
+        totalWidth = labelWidth + valueWidth + unitWidth + 25; // 20 为间隔
 
         // 确保 m_rowCoordinates 的大小与 m_displayLines 匹配
         m_rowCoordinates.resize(m_displayLines);
@@ -800,10 +800,18 @@ namespace yomu
             float y = lineHeight * ((&row - &m_rowCoordinates[0]) + 0.7f); // 计算 y 坐标
 
             // 绘制元素
-            HAL::drawChinese(row.xRow, y, m_labels[&row - &m_rowCoordinates[0]]);
-
-            HAL::drawEnglish(row.xRow + labelWidth + 20, y, row.value);
-            HAL::drawChinese(row.xRow + labelWidth + valueWidth + 30, y, row.unit);
+            if (this->m_displayMode == DoseDisplayMode::RealTime)
+            {
+                HAL::drawChinese(row.xRow + 3, y, m_labels[&row - &m_rowCoordinates[0]]);
+                HAL::drawEnglish(row.xRow + labelWidth + 20, y, row.value);
+                HAL::drawChinese(row.xRow + labelWidth + valueWidth + 25, y, row.unit);
+            }
+            else if (this->m_displayMode == DoseDisplayMode::Accumulated)
+            {
+                HAL::drawChinese(row.xRow, y, m_labels[&row - &m_rowCoordinates[0]]);
+                HAL::drawEnglish(row.xRow + labelWidth + 20, y, row.value);
+                HAL::drawChinese(row.xRow + labelWidth + valueWidth + 30, y, row.unit);
+            }
 
             // 更新位置
             animatePosition(row.xRow, row.xRowTrg);
@@ -1134,11 +1142,11 @@ namespace yomu
             HAL::setDrawType(2);
             if (row.p)
             {
-                HAL::drawRBox(xPDX - 2, y - 12, charWidth + 4, lineHeight, 0);
+                HAL::drawRBox(xPDX - 2, y - 12, charWidth + 4, lineHeight / 2, 0);
             }
             if (row.d)
             {
-                HAL::drawRBox(xPDX + charWidth + 8, y - 12, charWidth + 4, lineHeight, 0);
+                HAL::drawRBox(xPDX + charWidth + 8, y - 12, charWidth + 4, lineHeight / 2, 0);
             }
             HAL::setDrawType(1);
 

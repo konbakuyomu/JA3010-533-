@@ -26,7 +26,7 @@ namespace yomu
         void updateProbeData(const std::string &label, float doseRate,float cumulativeDose, bool p, bool d);
 
         // 获取所有探头数据的常量引用
-        const std::array<ProbeData, 4> &getProbeData() const;
+        const std::array<ProbeData, 2> &getProbeData() const;
 
         // 定义观察者类型，使用std::function来实现回调
         // std::function 是 C++11 引入的一个通用的函数封装器。它可以存储、复制和调用任何可调用目标，包括普通函数、lambda 表达式、函数对象（仿函数）、以及成员函数
@@ -41,7 +41,7 @@ namespace yomu
         ProbeDataManager();
 
         // 存储探头数据的数组，固定大小为4
-        std::array<ProbeData, 4> m_probeData;
+        std::array<ProbeData, 2> m_probeData;
 
         // 存储观察者的vector，也就是存储观察者的回调函数
         std::vector<Observer> m_observers;

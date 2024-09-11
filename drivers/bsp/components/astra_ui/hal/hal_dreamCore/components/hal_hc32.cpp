@@ -17,12 +17,12 @@ void HALDreamCore::_delay(unsigned long _mill)
 
 unsigned long HALDreamCore::_millis()
 {
-  return SysTick_GetTick();
+  return xTaskGetTickCount();
 }
 
 unsigned long HALDreamCore::_getTick()
 {
-  return SysTick_GetTick();
+  return xTaskGetTickCount();
 }
 
 unsigned long HALDreamCore::_getRandomSeed()

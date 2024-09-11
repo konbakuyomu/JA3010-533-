@@ -4,7 +4,7 @@
 #include "ui/item/page/page.h"
 #include "pic.h"
 
-std::vector<std::string> labels = {"前方", "后方", "左方", "右方"};
+std::vector<std::string> labels = {"探头1", "探头2"};
 
 auto *astraLauncher = new astra::Launcher();
 auto *rootPage = new yomu::GammaDashboard(labels, yomu::GammaDashboard::DoseDisplayMode::RealTime);
@@ -20,8 +20,11 @@ void astraCoreInit(void)
 {
   HAL::inject(new HALDreamCore);
   HAL::delay(150);
-  astra::drawSTART(80);
+  astra::drawSTART();
   // HAL::setFont(astra::getUIConfig().mainFont);
+
+  // 初始化蜂鸣器(开启)
+  xEventGroupSetBits(xProbeDataSendEventGroup, BEEP_FLAG_CHECK);
 
   // 添加环形界面
   rootPage->addMenu(secondPage);
@@ -41,18 +44,12 @@ void astraCoreInit(void)
   // 树形界面：累计剂量阈值
   cumulativeDoseThresholdPage->addItem(new yomu::NumberEditor("探头1", yomu::NumberEditor::DoseType::Cumulative));
   cumulativeDoseThresholdPage->addItem(new yomu::NumberEditor("探头2", yomu::NumberEditor::DoseType::Cumulative));
-  cumulativeDoseThresholdPage->addItem(new yomu::NumberEditor("探头3", yomu::NumberEditor::DoseType::Cumulative));
-  cumulativeDoseThresholdPage->addItem(new yomu::NumberEditor("探头4", yomu::NumberEditor::DoseType::Cumulative));
   // 树形界面：实时剂量阈值
   realtimeDoseThresholdPage->addItem(new yomu::NumberEditor("探头1", yomu::NumberEditor::DoseType::RealTime));
   realtimeDoseThresholdPage->addItem(new yomu::NumberEditor("探头2", yomu::NumberEditor::DoseType::RealTime));
-  realtimeDoseThresholdPage->addItem(new yomu::NumberEditor("探头3", yomu::NumberEditor::DoseType::RealTime));
-  realtimeDoseThresholdPage->addItem(new yomu::NumberEditor("探头4", yomu::NumberEditor::DoseType::RealTime));
   // 树形界面：清空累计剂量
   clearCumulativeDosePage->addItem(new astra::Divider("探头1"));
   clearCumulativeDosePage->addItem(new astra::Divider("探头2"));
-  clearCumulativeDosePage->addItem(new astra::Divider("探头3"));
-  clearCumulativeDosePage->addItem(new astra::Divider("探头4"));
   // 树形界面：蜂鸣器开关
   buzzerSwitchPage->addItem(new astra::Divider("开启"));
   buzzerSwitchPage->addItem(new astra::Divider("关闭"));

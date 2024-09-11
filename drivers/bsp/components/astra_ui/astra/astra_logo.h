@@ -10,9 +10,7 @@
 
 namespace astra
 {
-    void drawLogo(uint16_t _time);
-    void drawSTART(uint16_t _time);
-
+    void drawSTART();
 }
 
 #endif // ASTRA_CORE_SRC_ASTRA_ASTRA_LOGO_H_

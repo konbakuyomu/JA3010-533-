@@ -17,14 +17,16 @@ namespace astra
   {
     // 静态变量,用于控制初始化和渲染状态
     static bool init = false;
-    static unsigned long long int beginTime = this->time;
+    TickType_t beginTime = HAL::getTick();
+    TickType_t endTime = 0;
     static bool onRender = false;
 
     // 如果未初始化,进行初始化设置
     if (!init)
     {
+      // 标志位初始化
       init = true;
-      beginTime = this->time;
+      beginTime = HAL::getTick();
       onRender = true;
     }
 
@@ -44,7 +46,7 @@ namespace astra
     // 渲染循环
     while (onRender)
     {
-      time++;
+      endTime = HAL::getTick();
 
       HAL::canvasClear();
       /*渲染一帧*/
@@ -86,8 +88,10 @@ namespace astra
       event = keyResult.second;
 
       // 如果时间到或者按键按下就退出提示框
-      if ((time - beginTime >= _time) || (event == btn_click) || (event == btn_long_press))
+      if ((endTime - beginTime >= pdMS_TO_TICKS(_time)) || (event == btn_click) || (event == btn_long_press))
+      {
         yPopTrg = 0 - hPop - 8; // 滑出
+      }
 
       if (yPop == 0 - hPop - 8)
       {
@@ -548,7 +552,7 @@ namespace astra
       }
       else
       {
-        popInfo("子页面为空!", 300);
+        popInfo("子页面为空!", 1000);
       }
       return false;
     }
@@ -578,7 +582,7 @@ namespace astra
     {
       if (currentMenu->getchildMenu()->childMenu.empty())
       {
-        popInfo("子页面下无子页面!", 300);
+        popInfo("子页面下无子页面!", 1000);
         return false;
       }
 
@@ -610,7 +614,7 @@ namespace astra
       }
       else
       {
-        popInfo("父页面为空!", 600);
+        popInfo("父页面为空!", 1000);
       }
       return false;
     }
@@ -659,7 +663,7 @@ namespace astra
     Menu *tileMenu = currentMenu->findTileAncestor();
     if (tileMenu == nullptr)
     {
-      popInfo("未找到磁贴页面!", 300);
+      popInfo("未找到磁贴页面!", 1000);
       return false;
     }
 
@@ -687,10 +691,12 @@ namespace astra
     btn_event_t event = btn_not_press;
     std::vector<float> dont_stop_clear = {0.0f, 0.0f};
 
+    // 获取当前事件
+    TickType_t currentTime = HAL::getTick();
+
     // 队列接收更新探头报警信息
     WarningUpdateMessage updateMessage;
     std::string info;
-    const std::string probeNames[] = {"前方", "后方", "左方", "右方"};
 
     // 获取 ProbeDataManager 的实例
     yomu::ProbeDataManager &probeManager = yomu::ProbeDataManager::getInstance();
@@ -704,9 +710,20 @@ namespace astra
       uint8_t probeIndex = updateMessage.probeNumber - CAN_PROBE1_ID;
       if (probeIndex < 4)
       {
+        // 判断并提示是否重连，然后更新探头上次更新时间
+        if (Gloabal_ProbeStatus[probeIndex].connected == false)
+        {
+          // 弹出提示探头重连
+          Gloabal_ProbeStatus[probeIndex].connected = true;
+          info = "探头" + std::to_string(probeIndex + 1) + "重连";
+          popInfo(info, 2000);
+        }
+        Gloabal_ProbeStatus[probeIndex].lastUpdateTime = currentTime;
+
+        // 如果有 p/d 报警
         if (updateMessage.d || updateMessage.p)
         {
-          info = probeNames[probeIndex] + "探头 ";
+          info = "探头" + std::to_string(probeIndex + 1) + " ";
           info += (updateMessage.d && updateMessage.p) ? "p/d报警" : (updateMessage.p ? "p报警" : "d报警");
 
           switch (updateMessage.probeNumber)
@@ -718,7 +735,7 @@ namespace astra
             if ((xEventGroupGetBits(xProbeDataSendEventGroup) & (CURRENT_INTERFACE_FLAG_CIRCLE | CURRENT_INTERFACE_FLAG_TREE)) &&
                 (xEventGroupGetBits(xProbeDataSendEventGroup) & PROBE1_POPUP_FLAG))
             {
-              popInfo(info, 200);
+              popInfo(info, 2000);
               xEventGroupClearBits(xProbeDataSendEventGroup, PROBE1_POPUP_FLAG);
             }
             break;
@@ -729,7 +746,7 @@ namespace astra
             if ((xEventGroupGetBits(xProbeDataSendEventGroup) & (CURRENT_INTERFACE_FLAG_CIRCLE | CURRENT_INTERFACE_FLAG_TREE)) &&
                 (xEventGroupGetBits(xProbeDataSendEventGroup) & PROBE2_POPUP_FLAG))
             {
-              popInfo(info, 200);
+              popInfo(info, 2000);
               xEventGroupClearBits(xProbeDataSendEventGroup, PROBE2_POPUP_FLAG);
             }
             break;
@@ -740,7 +757,7 @@ namespace astra
             if ((xEventGroupGetBits(xProbeDataSendEventGroup) & (CURRENT_INTERFACE_FLAG_CIRCLE | CURRENT_INTERFACE_FLAG_TREE)) &&
                 (xEventGroupGetBits(xProbeDataSendEventGroup) & PROBE3_POPUP_FLAG))
             {
-              popInfo(info, 200);
+              popInfo(info, 2000);
               xEventGroupClearBits(xProbeDataSendEventGroup, PROBE3_POPUP_FLAG);
             }
             break;
@@ -751,7 +768,7 @@ namespace astra
             if ((xEventGroupGetBits(xProbeDataSendEventGroup) & (CURRENT_INTERFACE_FLAG_CIRCLE | CURRENT_INTERFACE_FLAG_TREE)) &&
                 (xEventGroupGetBits(xProbeDataSendEventGroup) & PROBE4_POPUP_FLAG))
             {
-              popInfo(info, 200);
+              popInfo(info, 2000);
               xEventGroupClearBits(xProbeDataSendEventGroup, PROBE4_POPUP_FLAG);
             }
             break;
@@ -778,6 +795,34 @@ namespace astra
           default:
             break;
           }
+        }
+      }
+    }
+
+    // 检查并提示是否断线，并清除未连接探头的显示
+    for (int i = 0; i < 2; ++i)
+    {
+      if (Gloabal_ProbeStatus[i].connected == true)
+      {
+        if (currentTime - Gloabal_ProbeStatus[i].lastUpdateTime >  pdMS_TO_TICKS(5000))
+        {
+          Gloabal_ProbeStatus[i].connected = false;
+          info = "探头" + std::to_string(i + 1) + "断线";
+          popInfo(info, 2000);
+        }
+      }
+      else
+      {
+        switch (i)
+        {
+        case 0:
+          probeManager.updateProbeData("探头1", 0, 0, false, false);
+          break;
+        case 1:
+          probeManager.updateProbeData("探头2", 0, 0, false, false);
+          break;
+        default:
+          break;
         }
       }
     }
@@ -850,18 +895,7 @@ namespace astra
     case btn_click:
       if (btn_io_num == KEY_BUTTON_1)
       {
-        if (uiType == UIType::Circular)
-        {
-          // 从环形界面切换到树形界面
-          uiType = UIType::Tree;
-
-          // 设置界面切换的标志位
-          xEventGroupSetBits(xProbeDataSendEventGroup, CURRENT_INTERFACE_FLAG_TREE);
-          xEventGroupClearBits(xProbeDataSendEventGroup, CURRENT_INTERFACE_FLAG_CIRCLE);
-
-          open();
-        }
-        else if (uiType == UIType::Tree)
+        if (uiType == UIType::Tree)
         {
           if ((currentMenu->getType() == "Page"))
           {
@@ -924,7 +958,18 @@ namespace astra
       }
       else if (btn_io_num == KEY_BUTTON_4)
       {
-        if (uiType == UIType::Tree)
+        if (uiType == UIType::Circular)
+        {
+          // 从环形界面切换到树形界面
+          uiType = UIType::Tree;
+
+          // 设置界面切换的标志位
+          xEventGroupSetBits(xProbeDataSendEventGroup, CURRENT_INTERFACE_FLAG_TREE);
+          xEventGroupClearBits(xProbeDataSendEventGroup, CURRENT_INTERFACE_FLAG_CIRCLE);
+
+          open();
+        }
+        else if (uiType == UIType::Tree)
         {
           if ((currentMenu->getType() == "Page"))
           {
@@ -1124,8 +1169,5 @@ namespace astra
     }
 
     HAL::canvasUpdate();
-
-    // time++;
-    time = HAL::millis() / 1000;
   }
 }
