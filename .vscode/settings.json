@@ -81,6 +81,9 @@
         "hc32f4xx.h": "c",
         "hc32f460.h": "c",
         "bsp_pwm.h": "c",
-        "hc32_ll_usart.h": "c"
+        "hc32_ll_usart.h": "c",
+        "arm_math.h": "c",
+        "launcher.h": "c",
+        "xstring": "cpp"
     }
 }

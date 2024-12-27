@@ -257,28 +257,37 @@ static const uint8_t u8x8_st7567_jlx12864_init_seq[] = {
 
     U8X8_START_TRANSFER(), /* enable chip, delay is part of the transfer start */
 
-    U8X8_C(0x0e2), /* soft reset */
-    U8X8_C(0x0ae), /* display off */
-    U8X8_C(0x040), /* set display start line to 0 */
+    U8X8_C(0x0e2), /* 软复位 */
+    U8X8_C(0x0ae), /* 关闭显示 */
+    U8X8_C(0x040), /* 设置显示起始行为0 */
 
-    U8X8_C(0x0a1), /* ADC set to reverse */
-    U8X8_C(0x0c0), /* common output mode */
-    // Flipmode
+    U8X8_C(0x0a1), /* ADC设置为反向，正向是0x0a0 */
+    U8X8_C(0x0c0), /* 普通输出模式 */
+    // 翻转模式
     // U8X8_C(0x0a0),		                /* ADC set to reverse */
     // U8X8_C(0x0c8),		                /* common output mode */
 
-    U8X8_C(0x0a6), /* display normal, bit val 0: LCD pixel off. */
-    U8X8_C(0x0a3), /* LCD bias 1/7 */
-    /* power on sequence from paxinstruments */
-    U8X8_C(0x028 | 4), /* all power  control circuits on */
-    U8X8_DLY(50),
-    U8X8_C(0x028 | 6), /* all power  control circuits on */
-    U8X8_DLY(50),
-    U8X8_C(0x028 | 7), /* all power  control circuits on */
-    U8X8_DLY(50),
+    U8X8_C(0x0a6), /* 正常显示，位值0：LCD像素关闭 */
+    // U8X8_C(0x0a3), /* LCD bias 1/7 */
+    U8X8_C(0x0a2), /* LCD偏置1/9 */
 
-    U8X8_C(0x023),           /* v0 voltage resistor ratio */
-    U8X8_CA(0x081, 42 >> 2), /* set contrast, contrast value*/
+    // /* 来自paxinstruments的开机序列，逐渐开启电源控制电路 */
+    // U8X8_C(0x028 | 4), /* all power  control circuits on */
+    // U8X8_DLY(50),
+    // U8X8_C(0x028 | 6), /* all power  control circuits on */
+    // U8X8_DLY(50),
+    // U8X8_C(0x028 | 7), /* all power  control circuits on */
+    // U8X8_DLY(50),
+    U8X8_C(0x02d),
+    U8X8_DLY(2),
+    U8X8_C(0x02e),
+    U8X8_DLY(2),
+    U8X8_C(0x02f),
+    U8X8_DLY(2),
+
+    U8X8_C(0x025),           /* v0电压电阻比 */
+    U8X8_DLY(2),
+    U8X8_CA(0x081, 0x01C), /* 设置对比度，对比度值*/
 
     U8X8_C(0x0ae), /* display off */
     U8X8_C(0x0a5), /* enter powersafe: all pixel on, issue 142 */

@@ -804,7 +804,7 @@ namespace astra
     {
       if (Gloabal_ProbeStatus[i].connected == true)
       {
-        if (currentTime - Gloabal_ProbeStatus[i].lastUpdateTime >  pdMS_TO_TICKS(5000))
+        if (currentTime - Gloabal_ProbeStatus[i].lastUpdateTime > pdMS_TO_TICKS(5000))
         {
           Gloabal_ProbeStatus[i].connected = false;
           info = "探头" + std::to_string(i + 1) + "断线";

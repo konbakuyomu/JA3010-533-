@@ -18,6 +18,7 @@
 .\objects\ev_hc32f460_lqfp100_v2.o: ..\..\drivers\hc32_ll_driver\inc\hc32_ll_dma.h
 .\objects\ev_hc32f460_lqfp100_v2.o: ..\..\drivers\hc32_ll_driver\inc\hc32_ll_efm.h
 .\objects\ev_hc32f460_lqfp100_v2.o: ..\..\drivers\hc32_ll_driver\inc\hc32_ll_fcg.h
+.\objects\ev_hc32f460_lqfp100_v2.o: ..\..\drivers\hc32_ll_driver\inc\hc32_ll_fcm.h
 .\objects\ev_hc32f460_lqfp100_v2.o: ..\..\drivers\hc32_ll_driver\inc\hc32_ll_gpio.h
 .\objects\ev_hc32f460_lqfp100_v2.o: ..\..\drivers\hc32_ll_driver\inc\hc32_ll_i2c.h
 .\objects\ev_hc32f460_lqfp100_v2.o: ..\..\drivers\hc32_ll_driver\inc\hc32_ll_i2s.h

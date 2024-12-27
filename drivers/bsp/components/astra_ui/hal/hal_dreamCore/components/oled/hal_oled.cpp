@@ -94,18 +94,30 @@ unsigned char HALDreamCore::_u8x8_gpio_and_delay_callback(__attribute__((unused)
 
 void HALDreamCore::_u8g2_init()
 {
-  u8g2_Setup_st7567_pi_132x64_f(&canvasBuffer,
-                                U8G2_R0, // 不旋转
-                                _u8x8_byte_hw_spi_callback,
-                                _u8x8_gpio_and_delay_callback);
-  u8g2_InitDisplay(&canvasBuffer);     // 根据所选的芯片进行初始化工作，初始化完成后，显示器处于关闭状态
-  u8g2_SetPowerSave(&canvasBuffer, 0); // 打开显示器
+  /* 1. 基础初始化 */
+  // 设置显示驱动、旋转方向、通信回调函数
+  u8g2_Setup_st7565_ea_dogm128_f(&canvasBuffer,
+                                 U8G2_R0,  // 不旋转显示
+                                 _u8x8_byte_hw_spi_callback,  // SPI通信回调
+                                 _u8x8_gpio_and_delay_callback); // GPIO和延时回调
+  
+  // 初始化显示器硬件(此时显示器处于关闭状态)
+  u8g2_InitDisplay(&canvasBuffer);
+  // 退出省电模式,打开显示
+  u8g2_SetPowerSave(&canvasBuffer, 0);
+  
+  /* 2. 显示参数配置 */
+  // 开启显示反转(反转后x坐标偏移+4)
+  u8g2_SetFlipMode(&canvasBuffer, 1);
+  // 清空显示缓冲区
   u8g2_ClearBuffer(&canvasBuffer);
-
-  u8g2_SetFontMode(&canvasBuffer, 1);           /*字体模式选择*/
-  u8g2_SetFontDirection(&canvasBuffer, 0);      /*字体方向选择*/
-  u8g2_SetFont(&canvasBuffer, u8g2_my_font_16); /*字库选择*/
-
+  
+  /* 3. 字体相关设置 */
+  u8g2_SetFontMode(&canvasBuffer, 1);           // 设置字体模式:透明
+  u8g2_SetFontDirection(&canvasBuffer, 0);      // 设置字体方向:正向
+  u8g2_SetFont(&canvasBuffer, u8g2_my_font_16); // 设置默认字体
+  
+  /* 4. 等待初始化完成 */
   vTaskDelay(100 / portTICK_PERIOD_MS);
 }
 
